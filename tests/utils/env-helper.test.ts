@@ -13,7 +13,7 @@ describe('env-helper', () => {
     delete process.env.AGENT_NAME;
     delete process.env.OPENAI_MODEL;
     delete process.env.AGENT_TEMPERATURE;
-    delete process.env.MAX_TOKENS;
+    delete process.env.OPENAI_SESSION_MAX_TOKENS;
     delete process.env.CUBICLER_URL;
     delete process.env.AGENT_TIMEOUT;
     delete process.env.AGENT_MAX_RETRIES;
@@ -53,7 +53,7 @@ describe('env-helper', () => {
       process.env.AGENT_NAME = 'CustomAgent';
       process.env.OPENAI_MODEL = 'gpt-3.5-turbo';
       process.env.AGENT_TEMPERATURE = '0.5';
-      process.env.MAX_TOKENS = '1024';
+      process.env.OPENAI_SESSION_MAX_TOKENS = '1024';
       process.env.CUBICLER_URL = 'http://custom-host:9000';
       process.env.AGENT_TIMEOUT = '5000';
       process.env.AGENT_MAX_RETRIES = '5';
@@ -103,7 +103,7 @@ describe('env-helper', () => {
       process.env.OPENAI_API_KEY = 'test-key';
       process.env.AGENT_PORT = '3001';
       process.env.AGENT_TEMPERATURE = '0.7';
-      process.env.MAX_TOKENS = '1500';
+      process.env.OPENAI_SESSION_MAX_TOKENS = '1500';
       process.env.AGENT_TIMEOUT = '8000';
       process.env.AGENT_MAX_RETRIES = '2';
       process.env.AGENT_SESSION_MAX_ITERATION = '20';
@@ -122,7 +122,7 @@ describe('env-helper', () => {
       process.env.OPENAI_API_KEY = 'test-key';
       process.env.AGENT_PORT = 'invalid';
       process.env.AGENT_TEMPERATURE = 'not-a-number';
-      process.env.MAX_TOKENS = 'abc';
+      process.env.OPENAI_SESSION_MAX_TOKENS = 'abc';
       process.env.AGENT_TIMEOUT = 'xyz';
       process.env.AGENT_MAX_RETRIES = 'def';
       process.env.AGENT_SESSION_MAX_ITERATION = 'ghi';
@@ -188,7 +188,7 @@ describe('env-helper', () => {
         process.env.OPENAI_API_KEY = 'test-key';
         process.env.AGENT_PORT = '0';
         process.env.AGENT_TEMPERATURE = '0';
-        process.env.MAX_TOKENS = '0';
+        process.env.OPENAI_SESSION_MAX_TOKENS = '0';
         process.env.AGENT_TIMEOUT = '0';
         process.env.AGENT_MAX_RETRIES = '0';
         process.env.AGENT_SESSION_MAX_ITERATION = '0';
@@ -207,7 +207,7 @@ describe('env-helper', () => {
         process.env.OPENAI_API_KEY = 'test-key';
         process.env.AGENT_PORT = '-1';
         process.env.AGENT_TEMPERATURE = '-0.5';
-        process.env.MAX_TOKENS = '-100';
+        process.env.OPENAI_SESSION_MAX_TOKENS = '-100';
         process.env.AGENT_TIMEOUT = '-5000';
         process.env.AGENT_MAX_RETRIES = '-2';
         process.env.AGENT_SESSION_MAX_ITERATION = '-5';
@@ -225,7 +225,7 @@ describe('env-helper', () => {
       it('should handle floating point values for integer fields', () => {
         process.env.OPENAI_API_KEY = 'test-key';
         process.env.AGENT_PORT = '3000.7';
-        process.env.MAX_TOKENS = '2048.9';
+        process.env.OPENAI_SESSION_MAX_TOKENS = '2048.9';
         process.env.AGENT_TIMEOUT = '10000.5';
         process.env.AGENT_MAX_RETRIES = '3.2';
         process.env.AGENT_SESSION_MAX_ITERATION = '10.8';
@@ -243,7 +243,7 @@ describe('env-helper', () => {
         process.env.OPENAI_API_KEY = 'test-key';
         process.env.AGENT_PORT = '999999';
         process.env.AGENT_TEMPERATURE = '100.5';
-        process.env.MAX_TOKENS = '1000000';
+        process.env.OPENAI_SESSION_MAX_TOKENS = '1000000';
         process.env.AGENT_TIMEOUT = '999999999';
         process.env.AGENT_MAX_RETRIES = '1000';
         process.env.AGENT_SESSION_MAX_ITERATION = '10000';

@@ -154,7 +154,7 @@ export class OpenAICubicAgent {
         completionRequest.tool_choice = 'auto';
       }
 
-      const completion = await this.openai.chat.completions.create(completionRequest);
+      const completion = await this.openai.chat.completions.create(completionRequest) as OpenAI.Chat.Completions.ChatCompletion;
 
       const latency = Date.now() - startTime;
       console.log(`[${this.config.agentName}] OpenAI API call ${iteration} completed in ${latency}ms`);

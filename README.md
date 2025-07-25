@@ -47,7 +47,7 @@ AGENT_NAME=CubicAgent-OpenAI
 OPENAI_API_KEY=your-openai-api-key-here
 OPENAI_MODEL=gpt-4o
 AGENT_TEMPERATURE=1
-MAX_TOKENS=2048
+OPENAI_SESSION_MAX_TOKENS=2048
 CUBICLER_URL=http://localhost:1503
 AGENT_TIMEOUT=10000
 AGENT_MAX_RETRIES=3
@@ -82,28 +82,51 @@ docker build -t cubicagent-openai .
 docker run -p 3000:3000 --env-file .env cubicagent-openai
 ```
 
-### Docker Compose Example
+### Docker Compose
+
+The project includes a `docker-compose.yml` file for easy deployment:
+
+```bash
+# Using environment file
+docker-compose --env-file .env up --build
+
+# Or with inline environment variables
+OPENAI_API_KEY=your-api-key docker-compose up --build
+```
+
+Example `docker-compose.yml`:
 
 ```yaml
-version: '3.8'
 services:
   cubicagent-openai:
     build: .
     ports:
-      - "3000:3000"
+      - "${AGENT_PORT:-3000}:${AGENT_PORT:-3000}"
     environment:
-      - AGENT_PORT=3000
-      - AGENT_NAME=CubicAgent-OpenAI
-      - OPENAI_API_KEY=your-api-key
-      - OPENAI_MODEL=gpt-4o
-      - AGENT_TEMPERATURE=1
-      - MAX_TOKENS=2048
-      - CUBICLER_URL=http://cubicler:1503
-      - AGENT_TIMEOUT=10000
-      - AGENT_MAX_RETRIES=3
-      - AGENT_SESSION_MAX_ITERATION=10
-    depends_on:
-      - cubicler
+      - AGENT_PORT=${AGENT_PORT:-3000}
+      - AGENT_NAME=${AGENT_NAME:-CubicAgent-OpenAI}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - AGENT_TEMPERATURE=${AGENT_TEMPERATURE:-1}
+      - OPENAI_SESSION_MAX_TOKENS=${OPENAI_SESSION_MAX_TOKENS:-2048}
+      - CUBICLER_URL=${CUBICLER_URL:-http://localhost:1503}
+      - AGENT_TIMEOUT=${AGENT_TIMEOUT:-10000}
+      - AGENT_MAX_RETRIES=${AGENT_MAX_RETRIES:-3}
+      - AGENT_SESSION_MAX_ITERATION=${AGENT_SESSION_MAX_ITERATION:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${AGENT_PORT:-3000}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - cubicagent-network
+
+networks:
+  cubicagent-network:
+    driver: bridge
 ```
 
 ## 🔧 API Reference
@@ -193,7 +216,7 @@ cubicagent-openai/
 | `OPENAI_API_KEY` | **Yes** | - | OpenAI API key |
 | `OPENAI_MODEL` | No | `gpt-4o` | OpenAI model to use |
 | `AGENT_TEMPERATURE` | No | `1` | Response creativity (0-2) |
-| `MAX_TOKENS` | No | `2048` | Maximum response length |
+| `OPENAI_SESSION_MAX_TOKENS` | No | `2048` | Maximum response length |
 | `CUBICLER_URL` | No | `http://localhost:1503` | Cubicler service URL |
 | `AGENT_TIMEOUT` | No | `10000` | Cubicler client timeout (ms) |
 | `AGENT_MAX_RETRIES` | No | `3` | Maximum retry attempts |
