@@ -3,7 +3,8 @@ import OpenAI from 'openai';
 import { 
   convertToOpenAIMessages,
   createGetProviderSpecFunction,
-  convertAgentFunctionsToOpenAI
+  convertAgentFunctionsToOpenAI,
+  cleanChatGPTResponse
 } from './utils/openai-helper.js';
 
 /**
@@ -201,7 +202,10 @@ export class OpenAICubicAgent {
         }
 
         console.log(`[${this.config.agentName}] Function calling completed after ${iteration} iterations`);
-        return finalMessage;
+        
+        // Clean the response to remove any unwanted prefixes
+        const cleanedMessage = cleanChatGPTResponse(finalMessage);
+        return cleanedMessage;
       }
     }
     

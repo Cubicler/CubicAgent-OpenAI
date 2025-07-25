@@ -25,8 +25,8 @@ export function convertToOpenAIMessages(
     systemPrompt += `\n\nFUNCTION CALLING STATUS: You are currently in iteration ${currentIteration}/${maxIterations} of function calling. Please be mindful of the remaining iterations and try to accomplish your task efficiently. If you're approaching the limit, prioritize the most essential function calls.`;
   }
   
-  // Add message format instruction
-  systemPrompt += '\n\nIMPORTANT: Messages in this conversation will be formatted as [sender]: message. When you see [sender]: message, the "sender" indicates who sent that message. Your own messages will be shown as [me]: message.';
+  // Add response format instruction
+  systemPrompt += '\n\nIMPORTANT RESPONSE FORMAT: You will see messages formatted as "[sender]: message" to show who sent each message. In this format, "[me]" refers to YOU (the AI assistant) and shows your previous responses. Other senders like "[user]", "[John]", or other agent names refer to other participants in the conversation (which could be humans, other AI agents, or systems). However, when YOU respond now, do NOT include any prefix like "[me]:" or "[assistant]:" or similar. Just respond with your message content directly and naturally.';
   
   // Add provider information if available
   if (request.providers && request.providers.length > 0) {
@@ -42,11 +42,12 @@ export function convertToOpenAIMessages(
     content: systemPrompt
   });
 
-  // Convert Cubicler messages to OpenAI format with enhanced sender formatting
+  // Convert Cubicler messages to OpenAI format with sender formatting for context
   for (const message of request.messages || []) {
-    // Determine role and format sender
+    // Determine role based on sender
     const role = message.sender === agentName ? 'assistant' : 'user';
     
+    // Format message with sender for context clarity
     let senderDisplay: string;
     if (message.sender === agentName) {
       senderDisplay = 'me';
@@ -63,6 +64,29 @@ export function convertToOpenAIMessages(
   }
 
   return messages;
+}
+
+/**
+ * Cleans up ChatGPT response by removing unwanted prefixes
+ */
+export function cleanChatGPTResponse(response: string): string {
+  // Remove common prefixes that ChatGPT might add despite instructions
+  const prefixPatterns = [
+    /^\[me\]\s?:\s*/i,
+    /^\[assistant\]\s?:\s*/i,
+    /^\[ai\]\s?:\s*/i,
+    /^\[bot\]\s?:\s*/i,
+    /^\[gpt\]\s?:\s*/i,
+    /^\[chatgpt\]\s?:\s*/i
+  ];
+  
+  let cleanedResponse = response.trim();
+  
+  for (const pattern of prefixPatterns) {
+    cleanedResponse = cleanedResponse.replace(pattern, '');
+  }
+  
+  return cleanedResponse.trim();
 }
 
 /**
