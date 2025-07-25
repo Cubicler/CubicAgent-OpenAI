@@ -190,10 +190,21 @@ export function convertToOpenAIMessages(
 
 ## Testing Approach
 
-- The SDK supports dependency injection for testing
-- Mock the `CubiclerClient` for unit tests
-- Mock the OpenAI client for testing AI integration
+### Unit Tests (Default)
+- **66 comprehensive unit tests** covering all core functionality
+- Run with `npm test` (fast, no API key required)
+- Integration tests excluded by default for faster development
+- Mock `CubiclerClient` and OpenAI client for isolation
 - Test the `onCall` handler logic independently
+
+### Integration Tests (Separate)
+- **6 comprehensive integration tests** with real OpenAI API
+- Run with `npm run test:integration` 
+- **Requires valid `OPENAI_API_KEY`** in environment
+- Tests actual OpenAI chat completion and function calling
+- Includes greeting, AI questions, context handling, weather/calculator providers
+- Mock Cubicler server for MCP provider integration
+- Validates ChatGPT response cleaning and formatting
 
 ## Production Features
 

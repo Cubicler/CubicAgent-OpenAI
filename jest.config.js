@@ -4,6 +4,7 @@ export default {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
   testMatch: ['**/tests/**/*.test.ts'],
+  testPathIgnorePatterns: ['<rootDir>/tests/integration'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true,

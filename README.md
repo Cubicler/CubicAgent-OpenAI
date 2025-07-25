@@ -160,8 +160,12 @@ The service converts Cubicler message roles to OpenAI format:
 
 ## 🧪 Testing
 
+### Unit Tests (Default)
+
+The project includes comprehensive unit tests that run quickly without requiring external dependencies:
+
 ```bash
-# Run all tests
+# Run unit tests (default - fast, no API key required)
 npm test
 
 # Run tests in watch mode
@@ -171,9 +175,35 @@ npm run test:watch
 npm run test:coverage
 ```
 
+**Features:**
+
+- ✅ **66 unit tests** covering all core functionality
+- ✅ **Fast execution** (~2 seconds)
+- ✅ **No OpenAI API key required** - uses mocks
+- ✅ **Integration tests excluded** by default for faster development
+
+### Integration Tests (Separate)
+
+For comprehensive testing with real OpenAI API calls:
+
+```bash
+# Run integration tests (requires valid OpenAI API key)
+npm run test:integration
+```
+
+**Features:**
+
+- ✅ **6 integration tests** with real OpenAI API
+- ✅ Tests actual **ChatGPT responses** and **function calling**
+- ✅ Validates **response cleaning** and **formatting**
+- ✅ Includes **weather** and **calculator** provider testing
+- ⚠️ **Requires `OPENAI_API_KEY`** in environment
+
+**Note:** Integration tests are excluded from the default `npm test` command to provide a faster development experience. Run them separately when you need to test the full OpenAI integration.
+
 ## 📁 Project Structure
 
-```
+```text
 cubicagent-openai/
 ├── src/
 │   ├── index.ts                  # Main entry point and agent setup
