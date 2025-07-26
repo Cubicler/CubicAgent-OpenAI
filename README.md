@@ -46,7 +46,7 @@ AGENT_PORT=3000
 AGENT_NAME=CubicAgent-OpenAI
 OPENAI_API_KEY=your-openai-api-key-here
 OPENAI_MODEL=gpt-4o
-AGENT_TEMPERATURE=1
+OPENAI_TEMPERATURE=1
 OPENAI_SESSION_MAX_TOKENS=2048
 CUBICLER_URL=http://localhost:1503
 AGENT_TIMEOUT=10000
@@ -107,7 +107,7 @@ services:
       - AGENT_NAME=${AGENT_NAME:-CubicAgent-OpenAI}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
-      - AGENT_TEMPERATURE=${AGENT_TEMPERATURE:-1}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-1}
       - OPENAI_SESSION_MAX_TOKENS=${OPENAI_SESSION_MAX_TOKENS:-2048}
       - CUBICLER_URL=${CUBICLER_URL:-http://localhost:1503}
       - AGENT_TIMEOUT=${AGENT_TIMEOUT:-10000}
@@ -245,7 +245,7 @@ cubicagent-openai/
 | `AGENT_NAME` | No | `CubicAgent-OpenAI` | Agent identifier |
 | `OPENAI_API_KEY` | **Yes** | - | OpenAI API key |
 | `OPENAI_MODEL` | No | `gpt-4o` | OpenAI model to use |
-| `AGENT_TEMPERATURE` | No | `1` | Response creativity (0-2) |
+| `OPENAI_TEMPERATURE` | No | `1` | Response creativity (0-2) |
 | `OPENAI_SESSION_MAX_TOKENS` | No | `2048` | Maximum response length |
 | `CUBICLER_URL` | No | `http://localhost:1503` | Cubicler service URL |
 | `AGENT_TIMEOUT` | No | `10000` | Cubicler client timeout (ms) |

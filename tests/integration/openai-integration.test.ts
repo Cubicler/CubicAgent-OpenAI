@@ -41,7 +41,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
       agentName: process.env.AGENT_NAME || 'Test-CubicAgent-OpenAI',
       openaiApiKey: OPENAI_API_KEY!,
       openaiModel: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
-      agentTemperature: parseFloat(process.env.AGENT_TEMPERATURE || '0.1'),
+      agentTemperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.1'),
       maxTokens: parseInt(process.env.OPENAI_SESSION_MAX_TOKENS || '150'),
       cubiclerUrl: process.env.CUBICLER_URL || 'http://localhost:1504',
       agentTimeout: parseInt(process.env.AGENT_TIMEOUT || '15000'),

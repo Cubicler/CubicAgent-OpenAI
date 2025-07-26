@@ -34,7 +34,7 @@ describe('Index - Agent Setup', () => {
     delete process.env.OPENAI_MODEL;
     delete process.env.AGENT_PORT;
     delete process.env.AGENT_NAME;
-    delete process.env.AGENT_TEMPERATURE;
+    delete process.env.OPENAI_TEMPERATURE;
     delete process.env.OPENAI_SESSION_MAX_TOKENS;
     delete process.env.CUBICLER_URL;
     delete process.env.AGENT_TIMEOUT;
@@ -50,7 +50,7 @@ describe('Index - Agent Setup', () => {
       process.env.OPENAI_MODEL = 'gpt-3.5-turbo';
       process.env.AGENT_PORT = '4000';
       process.env.AGENT_NAME = 'TestAgent';
-      process.env.AGENT_TEMPERATURE = '0.5';
+      process.env.OPENAI_TEMPERATURE = '0.5';
       process.env.OPENAI_SESSION_MAX_TOKENS = '1000';
       process.env.CUBICLER_URL = 'http://test:1234';
       process.env.AGENT_TIMEOUT = '5000';
@@ -124,7 +124,7 @@ describe('Index - Agent Setup', () => {
     it('should handle invalid number values gracefully', async () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.AGENT_PORT = 'invalid';
-      process.env.AGENT_TEMPERATURE = 'not-a-number';
+      process.env.OPENAI_TEMPERATURE = 'not-a-number';
       process.env.OPENAI_SESSION_MAX_TOKENS = 'xyz';
       process.env.AGENT_TIMEOUT = 'bad';
       process.env.AGENT_MAX_RETRIES = 'invalid';
@@ -150,7 +150,7 @@ describe('Index - Agent Setup', () => {
     it('should handle edge case environment values', async () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.AGENT_PORT = '0';
-      process.env.AGENT_TEMPERATURE = '0';
+      process.env.OPENAI_TEMPERATURE = '0';
       process.env.OPENAI_SESSION_MAX_TOKENS = '1';
       process.env.AGENT_TIMEOUT = '0';
       process.env.AGENT_MAX_RETRIES = '0';

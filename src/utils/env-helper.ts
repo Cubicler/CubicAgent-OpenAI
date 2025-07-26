@@ -17,7 +17,7 @@ export function createConfigFromEnv(): OpenAIAgentConfig {
     agentName: process.env.AGENT_NAME || 'CubicAgent-OpenAI',
     openaiApiKey: process.env.OPENAI_API_KEY!,
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
-    agentTemperature: parseFloat(process.env.AGENT_TEMPERATURE || '1'),
+    agentTemperature: parseFloat(process.env.OPENAI_TEMPERATURE || '1'),
     maxTokens: parseInt(process.env.OPENAI_SESSION_MAX_TOKENS || '2048'),
     cubiclerUrl: process.env.CUBICLER_URL || 'http://localhost:1503',
     agentTimeout: parseInt(process.env.AGENT_TIMEOUT || '10000'),
