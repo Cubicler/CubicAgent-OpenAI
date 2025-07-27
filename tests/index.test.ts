@@ -1,33 +1,36 @@
-import { jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { startAgent } from '../src/index';
 import { createConfigFromEnv } from '../src/utils/env-helper';
 import { OpenAICubicAgent } from '../src/openai-cubicagent';
 
 // Mock the OpenAICubicAgent
 const mockAgent = {
-  start: jest.fn(),
-  stop: jest.fn(),
-  getCubicAgent: jest.fn(),
+  start: vi.fn(),
+  stop: vi.fn(),
+  getCubicAgent: vi.fn(),
 };
 
 // Mock dotenv
-jest.mock('dotenv', () => ({
-  config: jest.fn(),
+vi.mock('dotenv', () => ({
+  default: {
+    config: vi.fn(),
+  },
+  config: vi.fn(),
 }));
 
 // Mock the OpenAICubicAgent
-jest.mock('../src/openai-cubicagent', () => ({
-  OpenAICubicAgent: jest.fn().mockImplementation(() => mockAgent),
+vi.mock('../src/openai-cubicagent', () => ({
+  OpenAICubicAgent: vi.fn().mockImplementation(() => mockAgent),
 }));
 
 describe('Index - Agent Setup', () => {
   // Mock process.exit to prevent test failures
-  const mockExit = jest.spyOn(process, 'exit').mockImplementation((() => {
+  const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
     throw new Error('process.exit called');
   }) as any);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockExit.mockClear();
     // Clear environment variables
     delete process.env.OPENAI_API_KEY;
@@ -203,7 +206,7 @@ describe('Index - Agent Setup', () => {
       const logLevels = ['debug', 'info', 'warn', 'error'];
       
       for (const level of logLevels) {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         process.env.LOG_LEVEL = level;
         
         await startAgent();
@@ -253,7 +256,7 @@ describe('Index - Agent Setup', () => {
       ];
 
       for (const key of validKeys) {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         process.env.OPENAI_API_KEY = key;
         
         await startAgent();
@@ -293,7 +296,7 @@ describe('Index - Agent Setup', () => {
 
     it('should handle OpenAICubicAgent constructor errors', async () => {
       const constructorError = new Error('Invalid configuration');
-      (OpenAICubicAgent as jest.Mock).mockImplementation(() => {
+      (OpenAICubicAgent as any).mockImplementation(() => {
         throw constructorError;
       });
 

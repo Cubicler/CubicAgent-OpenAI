@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import { resolve } from 'path';
+import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { OpenAICubicAgent } from '../../src/openai-cubicagent.js';
 import { MockCubiclerServer, mockProviders } from './mock-cubicler.js';
 import type { AgentRequest, CallContext } from '@cubicler/cubicagentkit';
@@ -76,8 +77,8 @@ describeOrSkip('OpenAI Integration Tests', () => {
 
     // Mock CallContext
     const mockContext: CallContext = {
-      executeFunction: jest.fn(),
-      getProviderSpec: jest.fn()
+      executeFunction: vi.fn(),
+      getProviderSpec: vi.fn()
     };
 
     const response = await agent['handleCall'](request, mockContext);
@@ -103,8 +104,8 @@ describeOrSkip('OpenAI Integration Tests', () => {
     };
 
     const mockContext: CallContext = {
-      executeFunction: jest.fn(),
-      getProviderSpec: jest.fn()
+      executeFunction: vi.fn(),
+      getProviderSpec: vi.fn()
     };
 
     const response = await agent['handleCall'](request, mockContext);
@@ -138,8 +139,8 @@ describeOrSkip('OpenAI Integration Tests', () => {
     };
 
     const mockContext: CallContext = {
-      executeFunction: jest.fn(),
-      getProviderSpec: jest.fn()
+      executeFunction: vi.fn(),
+      getProviderSpec: vi.fn()
     };
 
     const response = await agent['handleCall'](request, mockContext);
@@ -165,7 +166,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
 
     // Create real context that interacts with mock Cubicler
     const mockContext: CallContext = {
-      executeFunction: jest.fn().mockImplementation(async (functionName: string, params: any) => {
+      executeFunction: vi.fn().mockImplementation(async (functionName: string, params: any) => {
         // Simulate calling mock Cubicler's /execute endpoint
         const response = await fetch(`${mockCubicler.getUrl()}/execute/${functionName}`, {
           method: 'POST',
@@ -180,7 +181,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
         
         return await response.json();
       }),
-      getProviderSpec: jest.fn().mockImplementation(async (providerName: string) => {
+      getProviderSpec: vi.fn().mockImplementation(async (providerName: string) => {
         // Simulate calling mock Cubicler's provider spec endpoint
         const response = await fetch(`${mockCubicler.getUrl()}/provider/${providerName}/spec`);
         
@@ -222,7 +223,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
     };
 
     const mockContext: CallContext = {
-      executeFunction: jest.fn().mockImplementation(async (functionName: string, params: any) => {
+      executeFunction: vi.fn().mockImplementation(async (functionName: string, params: any) => {
         const response = await fetch(`${mockCubicler.getUrl()}/execute/${functionName}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -236,7 +237,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
         
         return await response.json();
       }),
-      getProviderSpec: jest.fn().mockImplementation(async (providerName: string) => {
+      getProviderSpec: vi.fn().mockImplementation(async (providerName: string) => {
         const response = await fetch(`${mockCubicler.getUrl()}/provider/${providerName}/spec`);
         
         if (!response.ok) {
@@ -290,8 +291,8 @@ describeOrSkip('OpenAI Integration Tests', () => {
     };
 
     const mockContext: CallContext = {
-      executeFunction: jest.fn(),
-      getProviderSpec: jest.fn()
+      executeFunction: vi.fn(),
+      getProviderSpec: vi.fn()
     };
 
     await expect(invalidAgent['handleCall'](request, mockContext))

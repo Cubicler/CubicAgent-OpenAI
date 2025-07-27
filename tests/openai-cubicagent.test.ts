@@ -1,9 +1,9 @@
-import { jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenAICubicAgent, type OpenAIAgentConfig } from '../src/openai-cubicagent';
 import type { AgentRequest, CallContext, JSONValue, JSONObject, ProviderSpecResponse } from '@cubicler/cubicagentkit';
 
 // Mock the OpenAI completion create method with any type
-const mockCreate = jest.fn() as jest.MockedFunction<any>;
+const mockCreate = vi.fn() as any;
 
 // Mock OpenAI
 const mockOpenAI = {
@@ -16,29 +16,28 @@ const mockOpenAI = {
 
 // Mock CubicAgent
 const mockCubicAgent = {
-  onCall: jest.fn(),
-  start: jest.fn(),
-  stop: jest.fn(),
+  onCall: vi.fn(),
+  start: vi.fn(),
+  stop: vi.fn(),
 };
 
 // Mock CubiclerClient
 const mockCubiclerClient = {};
 
 // Create properly typed mock functions
-const mockGetProviderSpec = jest.fn() as jest.MockedFunction<(providerName: string) => Promise<ProviderSpecResponse>>;
-const mockExecuteFunction = jest.fn() as jest.MockedFunction<(functionName: string, parameters: JSONObject) => Promise<JSONValue>>;
+const mockGetProviderSpec = vi.fn() as any;
+const mockExecuteFunction = vi.fn() as any;
 
 // Mock the dependencies
-jest.mock('openai', () => {
+vi.mock('openai', () => {
   return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(() => mockOpenAI),
+    default: vi.fn().mockImplementation(() => mockOpenAI),
   };
 });
 
-jest.mock('@cubicler/cubicagentkit', () => ({
-  CubicAgent: jest.fn().mockImplementation(() => mockCubicAgent),
-  CubiclerClient: jest.fn().mockImplementation(() => mockCubiclerClient),
+vi.mock('@cubicler/cubicagentkit', () => ({
+  CubicAgent: vi.fn().mockImplementation(() => mockCubicAgent),
+  CubiclerClient: vi.fn().mockImplementation(() => mockCubiclerClient),
 }));
 
 describe('OpenAICubicAgent', () => {
@@ -48,7 +47,7 @@ describe('OpenAICubicAgent', () => {
 
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock config
     mockConfig = {
@@ -100,7 +99,7 @@ describe('OpenAICubicAgent', () => {
     });
 
     it('should start the underlying CubicAgent', () => {
-      const callback = jest.fn();
+      const callback = vi.fn();
       agent.start(callback);
       expect(mockCubicAgent.start).toHaveBeenCalledWith(expect.any(Function));
     });
