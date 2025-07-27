@@ -1,6 +1,6 @@
 {
   "name": "cubicagent-openai",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A deployable OpenAI agent service that integrates with the Cubicler AI Orchestration Framework",
   "type": "module",
   "main": "dist/index.js",
