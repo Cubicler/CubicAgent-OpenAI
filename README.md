@@ -72,15 +72,38 @@ The service will be available at `http://localhost:3000` with the following endp
 
 ## 🐳 Docker Deployment
 
-### Build and Run
+The CubicAgent-OpenAI service is available as a pre-built Docker image on Docker Hub: `cubicler/cubicagent-openai`
+
+### Quick Start with Docker Hub
 
 ```bash
-# Build the Docker image
+# Pull and run the latest image
+docker pull cubicler/cubicagent-openai:latest
+
+docker run -d \
+  --name cubicagent-openai \
+  -p 3000:3000 \
+  -e OPENAI_API_KEY=your-openai-api-key \
+  -e AGENT_NAME=MyAgent \
+  cubicler/cubicagent-openai:latest
+```
+
+Available tags:
+
+- `latest`: Latest stable version
+- `1.0.1`: Current version
+
+### Build Locally
+
+```bash
+# Build the Docker image locally
 docker build -t cubicagent-openai .
 
 # Run the container
 docker run -p 3000:3000 --env-file .env cubicagent-openai
 ```
+
+For detailed Docker deployment instructions, including Kubernetes and production configurations, see [DOCKER.md](./DOCKER.md).
 
 ### Docker Compose
 
