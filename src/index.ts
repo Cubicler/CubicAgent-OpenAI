@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { OpenAICubicAgent, type OpenAIAgentConfig } from './openai-cubicagent.js';
+import { OpenAICubicAgent } from './openai-cubicagent.js';
 import { createConfigFromEnv } from './utils/env-helper.js';
 
 dotenv.config();
@@ -7,7 +7,7 @@ dotenv.config();
 /**
  * Main function to start the agent service
  */
-export async function startAgent(): Promise<OpenAICubicAgent> {
+export function startAgent(): OpenAICubicAgent {
   try {
     console.log('🔧 Initializing OpenAI Cubic Agent...');
     
@@ -30,5 +30,5 @@ export { OpenAICubicAgent, type OpenAIAgentConfig } from './openai-cubicagent.js
 // This check works in Node.js ES modules
 const isMainModule = process.argv[1] && process.argv[1].endsWith('index.js');
 if (isMainModule) {
-  startAgent();
+  void startAgent();
 }

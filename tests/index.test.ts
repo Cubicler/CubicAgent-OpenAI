@@ -27,7 +27,7 @@ describe('Index - Agent Setup', () => {
   // Mock process.exit to prevent test failures
   const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {
     throw new Error('process.exit called');
-  }) as any);
+  }) as unknown as () => never);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -47,7 +47,7 @@ describe('Index - Agent Setup', () => {
   });
 
   describe('startAgent', () => {
-    it('should create and start an OpenAI Cubic Agent with environment variables', async () => {
+    it('should create and start an OpenAI Cubic Agent with environment variables', () => {
       // Set environment variables
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.OPENAI_MODEL = 'gpt-3.5-turbo';
@@ -60,7 +60,7 @@ describe('Index - Agent Setup', () => {
       process.env.AGENT_MAX_RETRIES = '2';
       process.env.LOG_LEVEL = 'debug';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith({
         agentPort: 4000,
@@ -79,11 +79,11 @@ describe('Index - Agent Setup', () => {
       expect(mockAgent.start).toHaveBeenCalled();
     });
 
-    it('should use default values for optional environment variables', async () => {
+    it('should use default values for optional environment variables', () => {
       // Only set required variables
       process.env.OPENAI_API_KEY = 'test-api-key';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith({
         agentPort: 3000,
@@ -102,20 +102,20 @@ describe('Index - Agent Setup', () => {
       expect(mockAgent.start).toHaveBeenCalled();
     });
 
-    it('should throw error when required environment variables are missing', async () => {
+    it('should throw error when required environment variables are missing', () => {
       // Don't set OPENAI_API_KEY
 
-      await expect(startAgent()).rejects.toThrow();
+      expect(() => startAgent()).toThrow();
 
       expect(OpenAICubicAgent).not.toHaveBeenCalled();
       expect(mockAgent.start).not.toHaveBeenCalled();
     });
 
-    it('should handle AGENT_SESSION_MAX_ITERATION environment variable', async () => {
+    it('should handle AGENT_SESSION_MAX_ITERATION environment variable', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.AGENT_SESSION_MAX_ITERATION = '15';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -124,7 +124,7 @@ describe('Index - Agent Setup', () => {
       );
     });
 
-    it('should handle invalid number values gracefully', async () => {
+    it('should handle invalid number values gracefully', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.AGENT_PORT = 'invalid';
       process.env.OPENAI_TEMPERATURE = 'not-a-number';
@@ -133,7 +133,7 @@ describe('Index - Agent Setup', () => {
       process.env.AGENT_MAX_RETRIES = 'invalid';
       process.env.AGENT_SESSION_MAX_ITERATION = 'wrong';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith({
         agentPort: 3000, // PORT defaulted since NaN becomes 3000
@@ -150,7 +150,7 @@ describe('Index - Agent Setup', () => {
       });
     });
 
-    it('should handle edge case environment values', async () => {
+    it('should handle edge case environment values', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.AGENT_PORT = '0';
       process.env.OPENAI_TEMPERATURE = '0';
@@ -159,7 +159,7 @@ describe('Index - Agent Setup', () => {
       process.env.AGENT_MAX_RETRIES = '0';
       process.env.AGENT_SESSION_MAX_ITERATION = '1';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith({
         agentPort: 3000, // PORT defaulted since 0 is treated as falsy
@@ -176,14 +176,14 @@ describe('Index - Agent Setup', () => {
       });
     });
 
-    it('should handle empty string environment variables', async () => {
+    it('should handle empty string environment variables', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.OPENAI_MODEL = '';
       process.env.AGENT_NAME = '';
       process.env.CUBICLER_URL = '';
       process.env.LOG_LEVEL = '';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith({
         agentPort: 3000,
@@ -200,7 +200,7 @@ describe('Index - Agent Setup', () => {
       });
     });
 
-    it('should handle different log levels', async () => {
+    it('should handle different log levels', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       
       const logLevels = ['debug', 'info', 'warn', 'error'];
@@ -209,7 +209,7 @@ describe('Index - Agent Setup', () => {
         vi.clearAllMocks();
         process.env.LOG_LEVEL = level;
         
-        await startAgent();
+        startAgent();
         
         expect(OpenAICubicAgent).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -219,11 +219,11 @@ describe('Index - Agent Setup', () => {
       }
     });
 
-    it('should handle invalid log level', async () => {
+    it('should handle invalid log level', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
       process.env.LOG_LEVEL = 'invalid';
 
-      await startAgent();
+      startAgent();
 
       expect(OpenAICubicAgent).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -248,7 +248,7 @@ describe('Index - Agent Setup', () => {
       expect(() => createConfigFromEnv()).toThrow('Missing required environment variables: OPENAI_API_KEY');
     });
 
-    it('should accept valid OPENAI_API_KEY formats', async () => {
+    it('should accept valid OPENAI_API_KEY formats', () => {
       const validKeys = [
         'sk-1234567890abcdef',
         'sk-proj-abcdef1234567890',
@@ -259,7 +259,7 @@ describe('Index - Agent Setup', () => {
         vi.clearAllMocks();
         process.env.OPENAI_API_KEY = key;
         
-        await startAgent();
+        startAgent();
         
         expect(OpenAICubicAgent).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -275,32 +275,32 @@ describe('Index - Agent Setup', () => {
       process.env.OPENAI_API_KEY = 'test-api-key';
     });
 
-    it('should return the created agent instance', async () => {
-      const agent = await startAgent();
+    it('should return the created agent instance', () => {
+      const agent = startAgent();
       expect(agent).toBe(mockAgent);
     });
 
-    it('should call agent.start() during startup', async () => {
-      await startAgent();
+    it('should call agent.start() during startup', () => {
+      startAgent();
       expect(mockAgent.start).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle agent startup errors', async () => {
+    it('should handle agent startup errors', () => {
       const startupError = new Error('Failed to start agent');
       mockAgent.start.mockImplementation(() => {
         throw startupError;
       });
 
-      await expect(startAgent()).rejects.toThrow();
+      expect(() => startAgent()).toThrow();
     });
 
-    it('should handle OpenAICubicAgent constructor errors', async () => {
+    it('should handle OpenAICubicAgent constructor errors', () => {
       const constructorError = new Error('Invalid configuration');
-      (OpenAICubicAgent as any).mockImplementation(() => {
+      (OpenAICubicAgent as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
         throw constructorError;
       });
 
-      await expect(startAgent()).rejects.toThrow();
+      expect(() => startAgent()).toThrow();
     });
   });
 });

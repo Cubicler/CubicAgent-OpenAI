@@ -5,7 +5,6 @@
     "moduleResolution": "node",
     "lib": ["ES2022", "DOM"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -18,11 +17,11 @@
     "types": ["node", "vitest/globals"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "tests/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "tests"
+    "dist"
   ]
 }

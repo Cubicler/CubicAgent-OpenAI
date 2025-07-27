@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OpenAICubicAgent, type OpenAIAgentConfig } from '../src/openai-cubicagent';
-import type { AgentRequest, CallContext, JSONValue, JSONObject, ProviderSpecResponse } from '@cubicler/cubicagentkit';
+import type { AgentRequest, CallContext, ProviderSpecResponse, JSONValue, JSONObject } from '@cubicler/cubicagentkit';
 
-// Mock the OpenAI completion create method with any type
-const mockCreate = vi.fn() as any;
+// Mock the OpenAI completion create method
+const mockCreate = vi.fn();
 
 // Mock OpenAI
 const mockOpenAI = {
@@ -25,8 +25,8 @@ const mockCubicAgent = {
 const mockCubiclerClient = {};
 
 // Create properly typed mock functions
-const mockGetProviderSpec = vi.fn() as any;
-const mockExecuteFunction = vi.fn() as any;
+const mockGetProviderSpec = vi.fn<[string], Promise<ProviderSpecResponse>>();
+const mockExecuteFunction = vi.fn<[string, JSONObject], Promise<JSONValue>>();
 
 // Mock the dependencies
 vi.mock('openai', () => {
@@ -688,7 +688,7 @@ describe('OpenAICubicAgent', () => {
 
       // Check that error was included in tool result
       const secondCallArgs = mockCreate.mock.calls[1][0];
-      const toolMessage = secondCallArgs.messages.find((msg: any) => msg.role === 'tool');
+      const toolMessage = secondCallArgs.messages.find((msg: { role: string; content?: string }) => msg.role === 'tool');
       expect(toolMessage).toBeDefined();
       const toolContent = JSON.parse(toolMessage.content);
       expect(toolContent.error).toContain('Failed to get provider spec');

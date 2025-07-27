@@ -40,7 +40,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
     const config = {
       agentPort: parseInt(process.env.AGENT_PORT || '3001'),
       agentName: process.env.AGENT_NAME || 'Test-CubicAgent-OpenAI',
-      openaiApiKey: OPENAI_API_KEY!,
+      openaiApiKey: OPENAI_API_KEY,
       openaiModel: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
       agentTemperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.1'),
       maxTokens: parseInt(process.env.OPENAI_SESSION_MAX_TOKENS || '150'),
@@ -48,7 +48,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
       agentTimeout: parseInt(process.env.AGENT_TIMEOUT || '15000'),
       agentMaxRetries: parseInt(process.env.AGENT_MAX_RETRIES || '2'),
       maxFunctionIterations: parseInt(process.env.AGENT_SESSION_MAX_ITERATION || '8'),
-      logLevel: (process.env.LOG_LEVEL as any) || 'error'
+      logLevel: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'error'
     };
     
     agent = new OpenAICubicAgent(config);
@@ -166,7 +166,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
 
     // Create real context that interacts with mock Cubicler
     const mockContext: CallContext = {
-      executeFunction: vi.fn().mockImplementation(async (functionName: string, params: any) => {
+      executeFunction: vi.fn().mockImplementation(async (functionName: string, params: Record<string, unknown>) => {
         // Simulate calling mock Cubicler's /execute endpoint
         const response = await fetch(`${mockCubicler.getUrl()}/execute/${functionName}`, {
           method: 'POST',
@@ -223,7 +223,7 @@ describeOrSkip('OpenAI Integration Tests', () => {
     };
 
     const mockContext: CallContext = {
-      executeFunction: vi.fn().mockImplementation(async (functionName: string, params: any) => {
+      executeFunction: vi.fn().mockImplementation(async (functionName: string, params: Record<string, unknown>) => {
         const response = await fetch(`${mockCubicler.getUrl()}/execute/${functionName}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -132,7 +132,7 @@ describe('OpenAI Helper Utilities', () => {
       const result = createGetProviderSpecFunction([]);
 
       expect(result.function.parameters).toBeDefined();
-      const params = result.function.parameters as any;
+      const params = result.function.parameters as { properties: { providerName: { enum: string[] } } };
       expect(params.properties.providerName.enum).toEqual([]);
     });
   });

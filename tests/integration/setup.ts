@@ -7,7 +7,7 @@ import { afterEach } from "vitest";
 
 // Set up console logging for integration tests
 const originalConsoleLog = console.log;
-console.log = (...args: any[]) => {
+console.log = (...args: unknown[]) => {
   if (process.env.VITEST_VERBOSE === 'true') {
     originalConsoleLog(...args);
   }

@@ -1,5 +1,7 @@
 import express from 'express';
-import type { ProviderInfo, ProviderSpecResponse, JSONObject, FunctionCallResult } from '@cubicler/cubicagentkit';
+import type { Server } from 'http';
+import type { ProviderInfo, ProviderSpecResponse, JSONObject } from '@cubicler/cubicagentkit';
+import { FunctionParameterSchema, MockFunctionResult, WeatherData, UserData } from './mock-model';
 
 /**
  * Mock Cubicler Server
@@ -8,7 +10,7 @@ import type { ProviderInfo, ProviderSpecResponse, JSONObject, FunctionCallResult
 
 export class MockCubiclerServer {
   private app: express.Application;
-  private server: any;
+  private server: Server | null = null;
   private port: number;
 
   constructor(port: number = 1503) {
@@ -94,7 +96,7 @@ export class MockCubiclerServer {
                 }
               },
               required: ['city']
-            } as any
+            } as FunctionParameterSchema
           }
         ]
       },
@@ -112,7 +114,7 @@ export class MockCubiclerServer {
                 }
               },
               required: ['expression']
-            } as any
+            } as FunctionParameterSchema
           },
           {
             name: 'convertUnits',
@@ -131,7 +133,7 @@ export class MockCubiclerServer {
                 }
               },
               required: ['value', 'fromUnit', 'toUnit']
-            } as any
+            } as FunctionParameterSchema
           }
         ]
       },
@@ -149,7 +151,7 @@ export class MockCubiclerServer {
                 }
               },
               required: ['userId']
-            } as any
+            } as FunctionParameterSchema
           },
           {
             name: 'searchUsers',
@@ -165,7 +167,7 @@ export class MockCubiclerServer {
                 }
               },
               required: ['query']
-            } as any
+            } as FunctionParameterSchema
           }
         ]
       }
@@ -178,13 +180,13 @@ export class MockCubiclerServer {
     return specs[providerName];
   }
 
-  private executeFunction(functionName: string, parameters: JSONObject): any {
-    const functions: Record<string, (params: JSONObject) => any> = {
+  private executeFunction(functionName: string, parameters: JSONObject): MockFunctionResult {
+    const functions: Record<string, (params: JSONObject) => MockFunctionResult> = {
       getWeather: (params) => {
         const { city, country, unit = 'celsius' } = params;
         
         // Mock weather data
-        const weatherDatabase: Record<string, any> = {
+        const weatherDatabase: Record<string, WeatherData> = {
           'new york': { temp: 22, condition: 'sunny', humidity: 65, wind: '10 mph' },
           'london': { temp: 15, condition: 'cloudy', humidity: 80, wind: '5 mph' },
           'tokyo': { temp: 28, condition: 'partly cloudy', humidity: 70, wind: '8 mph' },
@@ -196,7 +198,7 @@ export class MockCubiclerServer {
         const data = weatherDatabase[cityKey];
         
         if (!data) {
-          throw new Error(`Weather data not available for ${city}`);
+          throw new Error(`Weather data not available for ${cityKey}`);
         }
 
         let temperature = data.temp;
@@ -205,7 +207,7 @@ export class MockCubiclerServer {
         }
 
         return {
-          city: city,
+          city,
           country: country || null,
           temperature: `${temperature}°${unit === 'celsius' ? 'C' : 'F'}`,
           condition: data.condition,
@@ -226,15 +228,23 @@ export class MockCubiclerServer {
             throw new Error('Invalid characters in expression');
           }
           
-          const result = Function(`"use strict"; return (${sanitized})`)();
+          // Simple calculator for basic math operations
+          let result: number;
+          try {
+            // Use a simple eval alternative for test purposes
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
+            result = Function(`"use strict"; return (${sanitized})`)();
+          } catch {
+            throw new Error('Failed to evaluate expression');
+          }
           
           if (typeof result !== 'number' || !isFinite(result)) {
             throw new Error('Invalid mathematical expression result');
           }
 
           return {
-            expression: expression,
-            result: result,
+            expression,
+            result,
             type: 'calculation',
             timestamp: new Date().toISOString()
           };
@@ -285,7 +295,7 @@ export class MockCubiclerServer {
         }
 
         if (!conversions[from] || !conversions[from][to]) {
-          throw new Error(`Conversion from ${fromUnit} to ${toUnit} is not supported`);
+          throw new Error(`Conversion from ${from} to ${to} is not supported`);
         }
 
         const result = (value as number) * conversions[from][to];
@@ -301,15 +311,16 @@ export class MockCubiclerServer {
       getUserById: (params) => {
         const { userId } = params;
         
-        const users: Record<string, any> = {
+        const users: Record<string, UserData> = {
           '123': { id: '123', name: 'John Doe', email: 'john@example.com', role: 'admin' },
           '456': { id: '456', name: 'Jane Smith', email: 'jane@example.com', role: 'user' },
           '789': { id: '789', name: 'Bob Johnson', email: 'bob@example.com', role: 'user' }
         };
 
-        const user = users[userId as string];
+        const userIdString = userId as string;
+        const user = users[userIdString];
         if (!user) {
-          throw new Error(`User with ID ${userId} not found`);
+          throw new Error(`User with ID ${userIdString} not found`);
         }
 
         return user;

@@ -60,7 +60,7 @@ export class OpenAICubicAgent {
       port: this.config.agentPort,
       agentName: this.config.agentName,
       logLevel: this.config.logLevel || 'info',
-      cubiclerClient: cubiclerClient
+      cubiclerClient
     });
 
     this.cubicAgent.onCall(this.handleCall.bind(this));
@@ -125,7 +125,7 @@ export class OpenAICubicAgent {
       availableFunctions.set('getProviderSpec', getProviderSpecTool);
     }
 
-    let conversationMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+    const conversationMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
     
     while (iteration < maxIterations) {
       iteration++;
@@ -227,7 +227,13 @@ export class OpenAICubicAgent {
     for (const toolCall of toolCalls) {
       if (toolCall.type === 'function') {
         const functionName = toolCall.function.name;
-        const functionArgs = JSON.parse(toolCall.function.arguments);
+        // Parse function arguments with proper error handling
+        let functionArgs: JSONObject;
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments) as JSONObject;
+        } catch (error) {
+          throw new Error(`Invalid JSON in function arguments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
         
         console.log(`[${this.config.agentName}] Calling function: ${functionName}`, functionArgs);
 
@@ -300,9 +306,10 @@ export class OpenAICubicAgent {
 
     try {
       const providerSpec = await context.getProviderSpec(providerName);
+      // Use the proper types from the SDK
       const functionResult: JSONObject = {
         context: providerSpec.context,
-        functions: providerSpec.functions as any
+        functions: providerSpec.functions as unknown as JSONObject
       };
       
       const state = providerState.get(providerName);

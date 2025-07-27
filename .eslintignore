@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Coverage reports
+coverage/
+
+# Configuration files
+*.config.js
+*.config.ts
+jest.config.js
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

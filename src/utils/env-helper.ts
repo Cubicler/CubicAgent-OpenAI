@@ -6,16 +6,22 @@ import { type OpenAIAgentConfig } from '../openai-cubicagent.js';
 export function createConfigFromEnv(): OpenAIAgentConfig {
   // Validate required environment variables
   const requiredEnvVars = ['OPENAI_API_KEY'];
-  const missing = requiredEnvVars.filter(key => !process.env[key] || process.env[key]!.trim() === '');
+  const missing = requiredEnvVars.filter(key => !process.env[key] || process.env[key]?.trim() === '');
   
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
+  // After validation, we know these exist
+  const openaiApiKey = process.env.OPENAI_API_KEY;
+  if (!openaiApiKey) {
+    throw new Error('OPENAI_API_KEY is required');
+  }
+
   return {
     agentPort: Number(process.env.AGENT_PORT) || 3000,
     agentName: process.env.AGENT_NAME || 'CubicAgent-OpenAI',
-    openaiApiKey: process.env.OPENAI_API_KEY!,
+    openaiApiKey,
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
     agentTemperature: parseFloat(process.env.OPENAI_TEMPERATURE || '1'),
     maxTokens: parseInt(process.env.OPENAI_SESSION_MAX_TOKENS || '2048'),
