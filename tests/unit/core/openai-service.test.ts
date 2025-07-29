@@ -683,7 +683,16 @@ describe('OpenAIService', () => {
 
       expect(mockCubicAgent.start).toHaveBeenCalledWith(expect.any(Function));
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        `OpenAIService started at port ${mockDispatchConfig.agentPort}`
+        'OpenAIService initialized',
+        expect.objectContaining({
+          model: mockOpenAIConfig.model,
+          temperature: mockOpenAIConfig.temperature,
+          maxTokens: mockOpenAIConfig.sessionMaxTokens,
+          maxIterations: mockDispatchConfig.sessionMaxIteration,
+          endpoint: mockDispatchConfig.endpoint,
+          agentPort: mockDispatchConfig.agentPort,
+          cubiclerUrl: 'http://localhost:8080'
+        })
       );
     });
 
