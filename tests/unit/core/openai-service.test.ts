@@ -141,15 +141,7 @@ describe('OpenAIService', () => {
     });
 
     it('should log initialization with correct parameters', () => {
-      expect(mockConsoleLog).toHaveBeenCalledWith('OpenAIService initialized', {
-        model: mockOpenAIConfig.model,
-        temperature: mockOpenAIConfig.temperature,
-        maxTokens: mockOpenAIConfig.sessionMaxTokens,
-        maxIterations: mockDispatchConfig.sessionMaxIteration,
-        endpoint: mockDispatchConfig.endpoint,
-        agentPort: mockDispatchConfig.agentPort,
-        cubiclerUrl: 'http://localhost:8080'
-      });
+      expect(mockConsoleLog).toHaveBeenCalledWith(`🚀 ${mockOpenAIConfig.model} ready - port:${mockDispatchConfig.agentPort}`);
     });
   });
 
@@ -301,7 +293,7 @@ describe('OpenAIService', () => {
         'OpenAI API call failed: OpenAI API Error'
       );
 
-      expect(mockConsoleError).toHaveBeenCalledWith('OpenAI API error:', apiError);
+      expect(mockConsoleError).toHaveBeenCalledWith('❌ OpenAI failed: OpenAI API Error');
     });
 
     it('should handle missing usage information', async () => {
@@ -392,7 +384,7 @@ describe('OpenAIService', () => {
           }
         }
       });
-      expect(mockConsoleLog).toHaveBeenCalledWith('Added 1 new tools from server');
+      expect(mockConsoleLog).toHaveBeenCalledWith('➕ Added 1 server tools');
     });
 
     it('should handle tool execution errors', async () => {
@@ -414,8 +406,7 @@ describe('OpenAIService', () => {
       );
 
       expect(mockConsoleError).toHaveBeenCalledWith(
-        'Tool execution failed for failing-tool:',
-        toolError
+        '❌ Tool failing-tool failed: Tool execution failed'
       );
       expect(result.toolMessages).toEqual([{
         role: 'tool',
@@ -614,9 +605,9 @@ describe('OpenAIService', () => {
       await (openAIService as any).executeIterativeLoop(mockRequest, mockAgentClient);
 
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        `Iteration 1/${mockDispatchConfig.sessionMaxIteration}`
+        `🔄 Iter 1/${mockDispatchConfig.sessionMaxIteration}`
       );
-      expect(mockConsoleLog).toHaveBeenCalledWith('Final response received');
+      expect(mockConsoleLog).toHaveBeenCalledWith('✅ Final response received');
     });
 
     it('should handle OpenAI API errors during iteration', async () => {
@@ -683,16 +674,7 @@ describe('OpenAIService', () => {
 
       expect(mockCubicAgent.start).toHaveBeenCalledWith(expect.any(Function));
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        'OpenAIService initialized',
-        expect.objectContaining({
-          model: mockOpenAIConfig.model,
-          temperature: mockOpenAIConfig.temperature,
-          maxTokens: mockOpenAIConfig.sessionMaxTokens,
-          maxIterations: mockDispatchConfig.sessionMaxIteration,
-          endpoint: mockDispatchConfig.endpoint,
-          agentPort: mockDispatchConfig.agentPort,
-          cubiclerUrl: 'http://localhost:8080'
-        })
+        `🚀 ${mockOpenAIConfig.model} ready - port:${mockDispatchConfig.agentPort}`
       );
     });
 
@@ -743,7 +725,7 @@ describe('OpenAIService', () => {
         content: 'Error: Test error',
         usedToken: 0
       });
-      expect(mockConsoleError).toHaveBeenCalledWith('Error processing request:', error);
+      expect(mockConsoleError).toHaveBeenCalledWith('❌ Test error');
     });
 
     it('should handle non-Error exceptions', async () => {
