@@ -1,8 +1,8 @@
 # Use Node.js 20 LTS Alpine base image
 FROM node:20-alpine
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl and netcat for health checks
+RUN apk add --no-cache curl netcat-openbsd
 
 # Set working directory
 WORKDIR /app
@@ -35,7 +35,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${AGENT_PORT:-3000}/health || exit 1
+  CMD curl -f http://localhost:${AGENT_PORT:-3000}/ || nc -z localhost ${AGENT_PORT:-3000} || exit 1
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "dist/index.js"]

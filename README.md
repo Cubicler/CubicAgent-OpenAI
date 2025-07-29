@@ -1,16 +1,17 @@
 # CubicAgent-OpenAI 🤖
 
-A deployable OpenAI agent service that integrates with the [Cubicler AI Orchestration Framework](https://github.com/hainayanda/Cubicler) using the [`@cubicler/cubicagentkit`](https://www.npmjs.com/package/@cubicler/cubicagentkit) SDK.
+A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.0](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.0.1`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
-This service acts as a standalone agent that:
+CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
 
-- ✅ Receives requests via the `/call` endpoint (handled by the SDK)
-- ✅ Converts Cubicler messages to OpenAI Chat API format
-- ✅ Queries OpenAI GPT models for AI responses
-- ✅ Returns responses through the Cubicler framework
-- ✅ Provides health checks via `/health` endpoint
+- ✅ **Lazy initialization** - Only connects to Cubicler on first dispatch request
+- ✅ **Multi-turn conversations** - Handles iterative function calling with session limits
+- ✅ **OpenAI integration** - Supports GPT-4o, GPT-4, GPT-4-turbo, GPT-3.5-turbo
+- ✅ **MCP tool mapping** - Converts Cubicler tools to OpenAI function calling format
+- ✅ **Retry logic** - Robust MCP communication with exponential backoff
+- ✅ **Zero-code deployment** - Just configure `.env` and run
 
 ## 🚀 Quick Start
 
@@ -18,7 +19,7 @@ This service acts as a standalone agent that:
 
 - Node.js 18+
 - OpenAI API key
-- Running Cubicler orchestration service (optional for testing)
+- Running Cubicler 2.0 instance (connects automatically on first request)
 
 ### Installation
 
@@ -42,16 +43,29 @@ nano .env
 Create a `.env` file with the following variables:
 
 ```env
-AGENT_PORT=3000
-AGENT_NAME=CubicAgent-OpenAI
+# Required Configuration
+CUBICLER_URL=http://localhost:8080
 OPENAI_API_KEY=your-openai-api-key-here
+
+# OpenAI Configuration (with defaults)
 OPENAI_MODEL=gpt-4o
-OPENAI_TEMPERATURE=1
-OPENAI_SESSION_MAX_TOKENS=2048
-CUBICLER_URL=http://localhost:1503
-AGENT_TIMEOUT=10000
-AGENT_MAX_RETRIES=3
-AGENT_SESSION_MAX_ITERATION=10
+OPENAI_TEMPERATURE=0.7
+OPENAI_SESSION_MAX_TOKENS=4096
+
+# Optional OpenAI Configuration
+# OPENAI_ORG_ID=org-your-organization-id
+# OPENAI_PROJECT_ID=proj_your-project-id  
+# OPENAI_BASE_URL=https://api.openai.com/v1
+# OPENAI_TIMEOUT=600000
+# OPENAI_MAX_RETRIES=2
+
+# Dispatch Configuration (with defaults)
+DISPATCH_TIMEOUT=30000
+MCP_MAX_RETRIES=3
+MCP_CALL_TIMEOUT=10000
+DISPATCH_SESSION_MAX_ITERATION=10
+DISPATCH_ENDPOINT=/
+AGENT_PORT=3000
 ```
 
 ### Running the Service
@@ -65,45 +79,21 @@ npm run build
 npm start
 ```
 
-The service will be available at `http://localhost:3000` with the following endpoints:
+The service will be available at `http://localhost:3000` with:
 
-- `POST /call` - Agent processing endpoint (used by Cubicler)
-- `GET /health` - Health check endpoint
+- **Lazy initialization** - Server starts immediately, connects to Cubicler on first request
+- **Agent endpoint** - Default `/` (configurable via `DISPATCH_ENDPOINT`)
+- **Health checks** - Built into CubicAgentKit for monitoring
 
 ## 🐳 Docker Deployment
 
-The CubicAgent-OpenAI service is available as a pre-built Docker image on Docker Hub: `cubicler/cubicagent-openai`
-
-### Quick Start with Docker Hub
+### Quick Docker Run
 
 ```bash
-# Pull and run the latest image
-docker pull cubicler/cubicagent-openai:latest
-
-docker run -d \
-  --name cubicagent-openai \
-  -p 3000:3000 \
-  -e OPENAI_API_KEY=your-openai-api-key \
-  -e AGENT_NAME=MyAgent \
-  cubicler/cubicagent-openai:latest
-```
-
-Available tags:
-
-- `latest`: Latest stable version
-- `1.0.1`: Current version
-
-### Build Locally
-
-```bash
-# Build the Docker image locally
+# Build and run locally
 docker build -t cubicagent-openai .
-
-# Run the container
 docker run -p 3000:3000 --env-file .env cubicagent-openai
 ```
-
-For detailed Docker deployment instructions, including Kubernetes and production configurations, see [DOCKER.md](./DOCKER.md).
 
 ### Docker Compose
 
@@ -114,7 +104,7 @@ The project includes a `docker-compose.yml` file for easy deployment:
 docker-compose --env-file .env up --build
 
 # Or with inline environment variables
-OPENAI_API_KEY=your-api-key docker-compose up --build
+OPENAI_API_KEY=your-api-key CUBICLER_URL=http://localhost:8080 docker-compose up --build
 ```
 
 Example `docker-compose.yml`:
@@ -126,17 +116,22 @@ services:
     ports:
       - "${AGENT_PORT:-3000}:${AGENT_PORT:-3000}"
     environment:
-      - AGENT_PORT=${AGENT_PORT:-3000}
-      - AGENT_NAME=${AGENT_NAME:-CubicAgent-OpenAI}
+      # Required
+      - CUBICLER_URL=${CUBICLER_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      
+      # OpenAI Configuration
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
-      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-1}
-      - OPENAI_SESSION_MAX_TOKENS=${OPENAI_SESSION_MAX_TOKENS:-2048}
-      - CUBICLER_URL=${CUBICLER_URL:-http://localhost:1503}
-      - AGENT_TIMEOUT=${AGENT_TIMEOUT:-10000}
-      - AGENT_MAX_RETRIES=${AGENT_MAX_RETRIES:-3}
-      - AGENT_SESSION_MAX_ITERATION=${AGENT_SESSION_MAX_ITERATION:-10}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+      - OPENAI_SESSION_MAX_TOKENS=${OPENAI_SESSION_MAX_TOKENS:-4096}
+      
+      # Dispatch Configuration
+      - AGENT_PORT=${AGENT_PORT:-3000}
+      - DISPATCH_TIMEOUT=${DISPATCH_TIMEOUT:-30000}
+      - MCP_MAX_RETRIES=${MCP_MAX_RETRIES:-3}
+      - MCP_CALL_TIMEOUT=${MCP_CALL_TIMEOUT:-10000}
+      - DISPATCH_SESSION_MAX_ITERATION=${DISPATCH_SESSION_MAX_ITERATION:-10}
+      - DISPATCH_ENDPOINT=${DISPATCH_ENDPOINT:-/}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${AGENT_PORT:-3000}/health"]
       interval: 30s
@@ -154,13 +149,20 @@ networks:
 
 ## 🔧 API Reference
 
-### Request Format (sent by Cubicler)
+### Session Flow
+
+1. **Lazy Connection** - Agent starts without connecting to Cubicler
+2. **First Request** - CubicAgentKit automatically initializes connection
+3. **Tool Discovery** - Agent fetches available tools via MCP
+4. **Iterative Execution** - OpenAI calls tools, agent executes, continues conversation
+5. **Session Limits** - Respects `DISPATCH_SESSION_MAX_ITERATION` and token limits
+
+### Request Format (handled by CubicAgentKit)
 
 ```typescript
 interface AgentRequest {
-  prompt: string;           // System prompt/context
   messages: Message[];      // Conversation history
-  providers: Provider[];    // Available providers (unused)
+  // Additional CubicAgentKit fields handled automatically
 }
 
 interface Message {
@@ -171,21 +173,15 @@ interface Message {
 
 ### Response Format
 
-The agent returns a simple string response containing the AI-generated message.
-
-### Message Role Conversion
-
-The service converts Cubicler message roles to OpenAI format:
-
-- `"user"` → `"user"` (unchanged)
-- `"{agentName}"` → `"assistant"` (agent responses)
-- `"OtherAgent"` → `"user"` with context: `"[OtherAgent]: message"`
+The agent returns the final OpenAI response after processing any tool calls within the session iteration limit.
 
 ## 🧪 Testing
 
+The project uses **Vitest** as the testing framework with comprehensive test coverage.
+
 ### Unit Tests (Default)
 
-The project includes comprehensive unit tests that run quickly without requiring external dependencies:
+Run fast unit tests that mock external dependencies:
 
 ```bash
 # Run unit tests (default - fast, no API key required)
@@ -200,14 +196,14 @@ npm run test:coverage
 
 **Features:**
 
-- ✅ **66 unit tests** covering all core functionality
-- ✅ **Fast execution** (~2 seconds)
-- ✅ **No OpenAI API key required** - uses mocks
-- ✅ **Integration tests excluded** by default for faster development
+- ✅ **Fast execution** - No external API calls
+- ✅ **No OpenAI API key required** - Uses mocks and fixtures
+- ✅ **Comprehensive coverage** - Tests all core functionality
+- ✅ **Configuration validation** - Environment variable edge cases
 
 ### Integration Tests (Separate)
 
-For comprehensive testing with real OpenAI API calls:
+Run integration tests with real OpenAI API calls:
 
 ```bash
 # Run integration tests (requires valid OpenAI API key)
@@ -216,93 +212,114 @@ npm run test:integration
 
 **Features:**
 
-- ✅ **6 integration tests** with real OpenAI API
-- ✅ Tests actual **ChatGPT responses** and **function calling**
-- ✅ Validates **response cleaning** and **formatting**
-- ✅ Includes **weather** and **calculator** provider testing
+- ✅ **Real OpenAI API testing** - Validates actual ChatGPT responses
+- ✅ **Function calling validation** - Tests tool execution flow
+- ✅ **Session iteration testing** - Multi-turn conversation scenarios
 - ⚠️ **Requires `OPENAI_API_KEY`** in environment
-
-**Note:** Integration tests are excluded from the default `npm test` command to provide a faster development experience. Run them separately when you need to test the full OpenAI integration.
 
 ## 📁 Project Structure
 
 ```text
-cubicagent-openai/
-├── src/
-│   ├── index.ts                  # Main entry point and agent setup
-│   ├── openai-cubicagent.ts      # OpenAI Cubic Agent class
-│   └── utils/
-│       ├── env-helper.ts         # Environment configuration helper
-│       └── openai-helper.ts      # OpenAI utility functions
-├── tests/
-│   ├── setup.ts                  # Test configuration
-│   ├── index.test.ts             # Setup and initialization tests
-│   ├── openai-cubicagent.test.ts # OpenAI agent logic tests
-│   └── utils/
-│       ├── env-helper.test.ts    # Environment helper tests
-│       └── openai-helper.test.ts # OpenAI helper tests
-├── .env.example                  # Environment template
-├── .dockerignore                 # Docker ignore rules
-├── Dockerfile                    # Container configuration
-├── jest.config.js                # Jest test configuration
-├── package.json                  # NPM package config
-├── tsconfig.json                 # TypeScript configuration
-└── README.md                     # This file
+src/
+├── index.ts                         # Application entry point with lazy initialization
+├── config/
+│   ├── environment.ts               # Environment variable validation with Zod
+│   └── types.ts                     # Configuration type definitions
+├── core/
+│   └── openai-service.ts            # OpenAI API integration with iterative function calling
+└── utils/
+    └── message-helper.ts            # Message format conversion utilities
+tests/
+├── setup.ts                         # Test configuration and setup
+├── integration/
+│   └── openai-service.integration.test.ts # Integration tests with OpenAI API
+└── unit/
+    ├── config/
+    │   └── environment.test.ts      # Configuration validation tests
+    ├── core/
+    │   └── openai-service.test.ts   # Unit tests for OpenAI service
+    └── utils/
+        └── message-helper.test.ts   # Message helper unit tests
+├── .env.example                     # Example environment configuration
+├── Dockerfile                       # Docker build configuration
+├── docker-compose.yml               # Docker compose for local development
+├── vitest.config.ts                 # Vitest test configuration
+├── eslint.config.js                 # ESLint configuration
+├── tsconfig.json                    # TypeScript configuration
+├── package.json                     # npm scripts and dependencies
+└── LICENSE                          # Apache 2.0 license
 ```
 
 ## 🛠️ Development
 
 ### Key Components
 
-- **OpenAICubicAgent**: Main agent class that encapsulates CubicAgent with OpenAI integration
-- **startAgent()**: Setup function that initializes the agent from environment variables
-- **Message Conversion**: Handles role mapping between Cubicler and OpenAI formats
-- **Environment Helper**: Validates and processes environment variables
-- **OpenAI Helper**: Utility functions for OpenAI API integration
+- **OpenAIService**: Main service class handling OpenAI API integration and iterative function calling
+- **CubicAgent**: Core orchestrator from CubicAgentKit 2.0.1 with lazy initialization
+- **Message Helper**: Utilities for converting between Cubicler and OpenAI message formats
+- **Environment Configuration**: Zod-based validation for all 11 environment variables
+- **Lazy Initialization**: Automatic connection to Cubicler on first dispatch request
+
+### Architecture Benefits
+
+- **Fast Startup**: Application starts immediately without waiting for Cubicler connection
+- **Fault Tolerance**: Can start even if Cubicler is temporarily unavailable
+- **Resource Efficiency**: Only establishes connection when needed
+- **Automatic Retry**: Built-in exponential backoff for MCP communication failures
+- **Session Management**: Handles multi-turn conversations with iteration limits
 
 ### Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `AGENT_PORT` | No | `3000` | Server port |
-| `AGENT_NAME` | No | `CubicAgent-OpenAI` | Agent identifier |
+| `CUBICLER_URL` | **Yes** | - | Cubicler instance URL for MCP communication |
 | `OPENAI_API_KEY` | **Yes** | - | OpenAI API key |
-| `OPENAI_MODEL` | No | `gpt-4o` | OpenAI model to use |
-| `OPENAI_TEMPERATURE` | No | `1` | Response creativity (0-2) |
-| `OPENAI_SESSION_MAX_TOKENS` | No | `2048` | Maximum response length |
-| `CUBICLER_URL` | No | `http://localhost:1503` | Cubicler service URL |
-| `AGENT_TIMEOUT` | No | `10000` | Cubicler client timeout (ms) |
-| `AGENT_MAX_RETRIES` | No | `3` | Maximum retry attempts |
-| `AGENT_SESSION_MAX_ITERATION` | No | `10` | Maximum function call iterations |
+| `OPENAI_MODEL` | No | `gpt-4o` | OpenAI model: gpt-4o, gpt-4, gpt-4-turbo, gpt-3.5-turbo |
+| `OPENAI_TEMPERATURE` | No | `0.7` | Response creativity (0.0-2.0) |
+| `OPENAI_SESSION_MAX_TOKENS` | No | `4096` | Maximum tokens per session/response |
+| `OPENAI_ORG_ID` | No | - | OpenAI organization ID (optional) |
+| `OPENAI_PROJECT_ID` | No | - | OpenAI project ID (optional) |
+| `OPENAI_BASE_URL` | No | - | Custom API base URL (optional) |
+| `OPENAI_TIMEOUT` | No | `600000` | API timeout in milliseconds |
+| `OPENAI_MAX_RETRIES` | No | `2` | Max retry attempts for OpenAI API |
+| `DISPATCH_TIMEOUT` | No | `30000` | Overall request timeout (ms) |
+| `MCP_MAX_RETRIES` | No | `3` | Max retry attempts for MCP communication |
+| `MCP_CALL_TIMEOUT` | No | `10000` | Individual MCP call timeout (ms) |
+| `DISPATCH_SESSION_MAX_ITERATION` | No | `10` | Max iterations per conversation session |
+| `DISPATCH_ENDPOINT` | No | `/` | Agent endpoint path |
+| `AGENT_PORT` | No | `3000` | HTTP server port |
 
 ### Error Handling
 
 The service handles common error scenarios:
 
-- ❌ Missing OpenAI API key
-- ❌ OpenAI API failures (rate limits, network issues)
-- ❌ Empty responses from OpenAI
-- ❌ Invalid request formats
+- ❌ **Missing required environment variables** - `CUBICLER_URL` or `OPENAI_API_KEY`
+- ❌ **OpenAI API failures** - Rate limits, network issues, context length exceeded
+- ❌ **MCP communication errors** - Connection failures, timeout, retry exhaustion
+- ❌ **Session limits** - Iteration limits, token limits, timeout exceeded
+- ❌ **Configuration errors** - Invalid environment variable values
 
-All errors are thrown with descriptive messages and logged for debugging.
+All errors are handled gracefully with structured logging and appropriate HTTP status codes.
 
 ## 🤝 Integration with Cubicler
 
-This agent is designed to work with the Cubicler AI Orchestration Framework:
+This agent integrates with Cubicler 2.0 using the lazy initialization pattern:
 
-1. **Registration**: The agent registers itself with the Cubicler service
-2. **Request Handling**: Cubicler sends requests to the `/call` endpoint
-3. **Response**: The agent processes the request and returns an AI response
-4. **Health Checks**: Cubicler monitors agent health via `/health`
+1. **Application Startup**: Agent starts HTTP server immediately without connecting to Cubicler
+2. **Lazy Connection**: CubicAgentKit 2.0.1 automatically connects on first dispatch request
+3. **Tool Discovery**: Agent fetches available MCP tools from Cubicler
+4. **Function Calling**: OpenAI can call tools, agent executes via MCP, continues conversation
+5. **Session Management**: Handles multi-turn conversations with iteration and token limits
+6. **Retry Logic**: Automatic retry for MCP communication failures with exponential backoff
 
 ## 📝 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ## 🔗 Related Projects
 
-- [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework
-- [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK
+- [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework 2.0
+- [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK 2.0.1
 
 ## 🐛 Troubleshooting
 
@@ -311,17 +328,26 @@ MIT License - see [LICENSE](LICENSE) file for details.
 **Agent won't start:**
 
 - Check that `OPENAI_API_KEY` is set correctly
-- Ensure port 3000 (or configured port) is available
+- Verify `CUBICLER_URL` points to a valid Cubicler 2.0 instance
+- Ensure port 3000 (or configured `AGENT_PORT`) is available
 - Verify Node.js version is 18+
 
 **OpenAI API errors:**
 
-- Verify API key has sufficient credits
-- Check rate limits and quotas
-- Ensure the specified model is available
+- Verify API key has sufficient credits and correct permissions
+- Check rate limits and quotas in OpenAI dashboard
+- Ensure the specified model (`OPENAI_MODEL`) is available
+- Review token limits (`OPENAI_SESSION_MAX_TOKENS`) for context length
 
-**Connection to Cubicler fails:**
+**Lazy initialization issues:**
 
-- Verify `CUBICLER_URL` points to running Cubicler service
-- Check network connectivity
-- Review Cubicler service logs
+- Agent starts successfully but connection happens on first request
+- Check Cubicler 2.0 is running and accessible at `CUBICLER_URL`
+- Review `MCP_CALL_TIMEOUT` and `MCP_MAX_RETRIES` for network issues
+- Verify firewall and network connectivity between services
+
+**Session and iteration problems:**
+
+- Adjust `DISPATCH_SESSION_MAX_ITERATION` for complex multi-turn conversations
+- Increase `DISPATCH_TIMEOUT` for longer-running sessions
+- Monitor token usage against `OPENAI_SESSION_MAX_TOKENS` limits

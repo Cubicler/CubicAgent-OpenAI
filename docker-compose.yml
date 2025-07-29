@@ -4,19 +4,27 @@ services:
     ports:
       - "${AGENT_PORT:-3000}:${AGENT_PORT:-3000}"
     environment:
-      - AGENT_PORT=${AGENT_PORT:-3000}
-      - AGENT_NAME=${AGENT_NAME:-CubicAgent-OpenAI}
+      # OpenAI Configuration
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
-      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-1}
-      - OPENAI_SESSION_MAX_TOKENS=${OPENAI_SESSION_MAX_TOKENS:-2048}
-      - CUBICLER_URL=${CUBICLER_URL:-http://localhost:1503}
-      - AGENT_TIMEOUT=${AGENT_TIMEOUT:-10000}
-      - AGENT_MAX_RETRIES=${AGENT_MAX_RETRIES:-3}
-      - AGENT_SESSION_MAX_ITERATION=${AGENT_SESSION_MAX_ITERATION:-10}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.7}
+      - OPENAI_SESSION_MAX_TOKENS=${OPENAI_SESSION_MAX_TOKENS:-4096}
+      
+      # Dispatch Configuration
+      - DISPATCH_TIMEOUT=${DISPATCH_TIMEOUT:-30000}
+      - MCP_MAX_RETRIES=${MCP_MAX_RETRIES:-3}
+      - MCP_CALL_TIMEOUT=${MCP_CALL_TIMEOUT:-10000}
+      - DISPATCH_SESSION_MAX_ITERATION=${DISPATCH_SESSION_MAX_ITERATION:-10}
+      - DISPATCH_ENDPOINT=${DISPATCH_ENDPOINT:-/}
+      - AGENT_PORT=${AGENT_PORT:-3000}
+      
+      # System Configuration
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Cubicler URL (required)
+      - CUBICLER_URL=${CUBICLER_URL:-http://localhost:8080}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${AGENT_PORT:-3000}/health"]
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:${AGENT_PORT:-3000}/ || nc -z localhost ${AGENT_PORT:-3000}"]
       interval: 30s
       timeout: 10s
       retries: 3

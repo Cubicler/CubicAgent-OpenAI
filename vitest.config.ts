@@ -3,22 +3,21 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['tests/**/*.test.ts'],
-    exclude: ['tests/integration/**/*.test.ts', 'node_modules/**/*'],
-    globals: true,
-    setupFiles: ['tests/setup.ts'],
+    include: ['tests/**/*.{test,spec}.ts'],
+    exclude: ['tests/setup.ts', 'node_modules/**'],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.d.ts'],
       reporter: ['text', 'lcov', 'html'],
-      reportsDirectory: './coverage'
-    }
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.d.ts', 'src/**/*.test.ts', 'src/**/*.spec.ts'],
+    },
+    setupFiles: ['tests/setup.ts'],
+    testTimeout: 30000,
+    globals: true,
   },
   resolve: {
     alias: {
-      // Handle ES module imports ending with .js to resolve to .ts files
-      '^(.+)\\.js$': '$1'
-    }
-  }
+      '@': '/src',
+    },
+  },
 });

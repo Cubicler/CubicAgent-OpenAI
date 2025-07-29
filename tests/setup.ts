@@ -1,16 +1,10 @@
-// Test setup configuration
-import dotenv from 'dotenv';
+// Test setup file for vitest
+// This file is run before all tests
 
-// Load test environment variables
-dotenv.config({ path: '.env.test' });
+import { vi, beforeEach } from 'vitest';
 
-// Set up test environment variables if not provided
-process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'test-api-key';
-process.env.AGENT_NAME = process.env.AGENT_NAME || 'TestAgent';
-process.env.OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4';
-process.env.OPENAI_TEMPERATURE = process.env.OPENAI_TEMPERATURE || '0.5';
-process.env.OPENAI_SESSION_MAX_TOKENS = process.env.OPENAI_SESSION_MAX_TOKENS || '1000';
-process.env.CUBICLER_URL = process.env.CUBICLER_URL || 'http://localhost:1503';
-process.env.AGENT_PORT = process.env.AGENT_PORT || '3001';
-process.env.AGENT_TIMEOUT = process.env.AGENT_TIMEOUT || '5000';
-process.env.AGENT_MAX_RETRIES = process.env.AGENT_MAX_RETRIES || '2';
+// Global setup for all tests
+beforeEach(() => {
+  // Clear all mocks before each test
+  vi.clearAllMocks();
+});

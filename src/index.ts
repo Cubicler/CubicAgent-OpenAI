@@ -1,34 +1,70 @@
-import dotenv from 'dotenv';
-import { OpenAICubicAgent } from './openai-cubicagent.js';
-import { createConfigFromEnv } from './utils/env-helper.js';
+#!/usr/bin/env node
 
-dotenv.config();
+import { loadConfig } from './config/environment.js';
+import { OpenAIService } from './core/openai-service.js';
 
 /**
- * Main function to start the agent service
+ * Main entry point for CubicAgent-OpenAI
+ * Loads configuration and starts the OpenAI service
  */
-export function startAgent(): OpenAICubicAgent {
+async function main() {
   try {
-    console.log('🔧 Initializing OpenAI Cubic Agent...');
+    // Load and validate configuration
+    console.log('Loading configuration...');
+    const config = loadConfig();
     
-    const config = createConfigFromEnv();
-    const agent = new OpenAICubicAgent(config);
-    agent.start();
+    console.log('Configuration loaded successfully:', {
+      model: config.openai.model,
+      temperature: config.openai.temperature,
+      maxTokens: config.openai.sessionMaxTokens,
+      maxIterations: config.dispatch.sessionMaxIteration,
+      agentPort: config.dispatch.agentPort
+    });
+
+    // Get Cubicler URL from environment
+    const cubiclerUrl = process.env['CUBICLER_URL'];
+    if (!cubiclerUrl) {
+      throw new Error('CUBICLER_URL environment variable is required');
+    }
+
+    console.log('Initializing OpenAI service...', { cubiclerUrl });
+
+    // Create and start the OpenAI service
+    const openaiService = new OpenAIService(
+      config.openai,
+      config.dispatch,
+      cubiclerUrl
+    );
+
+    // Start the service
+    await openaiService.start();
     
-    return agent;
+    console.log('CubicAgent-OpenAI started successfully');
+
+    // Handle graceful shutdown
+    process.on('SIGINT', async () => {
+      console.log('Received SIGINT, shutting down gracefully...');
+      process.exit(0);
+    });
+
+    process.on('SIGTERM', async () => {
+      console.log('Received SIGTERM, shutting down gracefully...');
+      process.exit(0);
+    });
 
   } catch (error) {
-    console.error('❌ Failed to start agent:', error);
+    console.error('Failed to start CubicAgent-OpenAI:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     process.exit(1);
   }
 }
 
-// Export the agent class for testing and external use
-export { OpenAICubicAgent, type OpenAIAgentConfig } from './openai-cubicagent.js';
-
-// Start the agent if this file is run directly
-// This check works in Node.js ES modules
-const isMainModule = process.argv[1] && process.argv[1].endsWith('index.js');
-if (isMainModule) {
-  void startAgent();
+// Only run if this is the main module
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((error) => {
+    console.error('Unhandled error:', error);
+    process.exit(1);
+  });
 }
