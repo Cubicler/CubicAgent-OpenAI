@@ -1,6 +1,6 @@
 # CubicAgent-OpenAI AI Development Instructions
 
-CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with Cubicler 2.0 using CubicAgentKit 2.1.0 as the foundation library. It's a complete, deployable solution that users can run immediately with just environment configuration.
+CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with Cubicler 2.3.0 using CubicAgentKit 2.3.0 as the foundation library. It's a complete, deployable solution that users can run immediately with just environment configuration.
 
 ## 🧱 System Overview
 
@@ -15,7 +15,7 @@ CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
 
 **Architecture Philosophy:**
 - **Deployment-first** - Ready to run out of the box with minimal configuration
-- **Built on CubicAgentKit 2.1.0** - Uses CubicAgent, AxiosAgentClient, and ExpressAgentServer with lazy initialization
+- **Built on CubicAgentKit 2.3.0** - Uses CubicAgent, AxiosAgentClient, and ExpressAgentServer with lazy initialization
 - **Environment-driven** - All configuration via .env file with Zod validation
 - **Session-aware** - Handles multi-turn conversations with iteration limits
 - **Retry-resilient** - Automatic retry logic for MCP tool calls
@@ -25,11 +25,11 @@ CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
 ## 🏗️ Core Architecture Principles
 
 ### CubicAgentKit Foundation
-CubicAgent-OpenAI is built on top of CubicAgentKit 2.1.0's composition architecture with lazy initialization:
+CubicAgent-OpenAI is built on top of CubicAgentKit 2.3.0's composition architecture with lazy initialization:
 
 **Foundation Dependency:**
 ```bash
-npm install @cubicler/cubicagentkit@^2.1.0
+npm install @cubicler/cubicagentkit@^2.3.0
 ```
 
 **Core Components:**
@@ -39,7 +39,7 @@ npm install @cubicler/cubicagentkit@^2.1.0
 - **OpenAI Service** - Handles OpenAI API integration and iterative function calling
 
 ### Lazy Initialization Architecture
-CubicAgentKit 2.1.0 provides built-in lazy initialization - the agent only connects to Cubicler when the first dispatch request arrives:
+CubicAgentKit 2.3.0 provides built-in lazy initialization - the agent only connects to Cubicler when the first dispatch request arrives:
 
 **Lazy Initialization Flow:**
 1. Application starts with HTTP server listening on configured port
@@ -341,12 +341,12 @@ npm run test:coverage       # Run tests with coverage report
 ## ✅ Your Role
 
 When I ask you for code, your job is to:
-• **Maintain CubicAgentKit 2.1.0 patterns** - Use CubicAgent, AxiosAgentClient, ExpressAgentServer with lazy initialization
+• **Maintain CubicAgentKit 2.3.0 patterns** - Use CubicAgent, AxiosAgentClient, ExpressAgentServer with lazy initialization
 • **Preserve function calling loop** - Same iterative conversation with tool building via CubicAgent.getTools()
 • **Keep OpenAI integration patterns** - Same message conversion, tool building, response cleaning  
 • **Map configuration properly** - Use the 11 environment variables as specified
 • **Implement session flow** - Tool discovery → function loading → iterative execution
-• **Handle lazy initialization** - Let CubicAgentKit 2.1.0 handle connection timing automatically
+• **Handle lazy initialization** - Let CubicAgentKit 2.3.0 handle connection timing automatically
 • **Maintain error handling** - Same error response patterns and iteration limits
 
 ## ✅ DO NOT
@@ -361,4 +361,4 @@ When I ask you for code, your job is to:
 • Do not include multiple deployment configurations - one Dockerfile only
 • Do not add manual initialization code - let CubicAgentKit 2.1.0 handle lazy initialization
 
-When working on CubicAgent-OpenAI, focus on creating a robust, production-ready OpenAI agent that seamlessly integrates with Cubicler using the CubicAgentKit 2.1.0 foundation while maintaining simplicity and reliability.
+When working on CubicAgent-OpenAI, focus on creating a robust, production-ready OpenAI agent that seamlessly integrates with Cubicler using the CubicAgentKit 2.3.0 foundation while maintaining simplicity and reliability.

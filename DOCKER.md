@@ -23,7 +23,7 @@ docker run -d \
   -e CUBICLER_URL=http://host.docker.internal:1503 \
   -e AGENT_PORT=1504 \
   -e OPENAI_MODEL=gpt-4o-mini \
-  cubicler/cubicagent-openai:2.1.0
+  cubicler/cubicagent-openai:2.3.0
 ```
 
 ### Environment Variables
@@ -55,7 +55,7 @@ docker run -d \
 ```yaml
 services:
   cubicagent-openai:
-    image: cubicler/cubicagent-openai:2.1.0
+    image: cubicler/cubicagent-openai:2.3.0
     ports:
       - "1504:1504"
     environment:
@@ -99,7 +99,7 @@ docker run -d \
   --name cubicagent-openai \
   -p 1504:1504 \
   --env-file .env \
-  cubicler/cubicagent-openai:2.1.0
+  cubicler/cubicagent-openai:2.3.0
 ```
 
 ### Health Check
@@ -120,8 +120,9 @@ docker logs -f cubicagent-openai  # Follow logs
 
 ### Available Tags
 
-- `latest`: Latest stable version (currently 2.1.0)
-- `2.1.0`: Latest version with CubicAgentKit 2.1.0 support
+- `latest`: Latest stable version (currently 2.3.0)
+- `2.3.0`: Latest version with CubicAgentKit 2.3.0 support
+- `2.1.0`: Previous version with CubicAgentKit 2.1.0 support
 
 ### Using with Kubernetes
 

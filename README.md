@@ -1,6 +1,6 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.0](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.1.0`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.0`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
@@ -19,7 +19,7 @@ CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
 
 - Node.js 18+
 - OpenAI API key
-- Running Cubicler 2.0 instance (connects automatically on first request)
+- Running Cubicler 2.3 instance (connects automatically on first request)
 
 ### Installation
 
@@ -303,7 +303,7 @@ All errors are handled gracefully with structured logging and appropriate HTTP s
 
 ## 🤝 Integration with Cubicler
 
-This agent integrates with Cubicler 2.0 using the lazy initialization pattern:
+This agent integrates with Cubicler 2.3 using the lazy initialization pattern:
 
 1. **Application Startup**: Agent starts HTTP server immediately without connecting to Cubicler
 2. **Lazy Connection**: CubicAgentKit 2.0.1 automatically connects on first dispatch request
@@ -328,7 +328,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 **Agent won't start:**
 
 - Check that `OPENAI_API_KEY` is set correctly
-- Verify `CUBICLER_URL` points to a valid Cubicler 2.0 instance
+- Verify `CUBICLER_URL` points to a valid Cubicler 2.3 instance
 - Ensure port 3000 (or configured `AGENT_PORT`) is available
 - Verify Node.js version is 18+
 
@@ -342,7 +342,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 **Lazy initialization issues:**
 
 - Agent starts successfully but connection happens on first request
-- Check Cubicler 2.0 is running and accessible at `CUBICLER_URL`
+- Check Cubicler 2.3 is running and accessible at `CUBICLER_URL`
 - Review `MCP_CALL_TIMEOUT` and `MCP_MAX_RETRIES` for network issues
 - Verify firewall and network connectivity between services
 
