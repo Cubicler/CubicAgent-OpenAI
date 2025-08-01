@@ -1,6 +1,6 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.0](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.0.1`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.0](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.1.0`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 

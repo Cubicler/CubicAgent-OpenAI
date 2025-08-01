@@ -34,7 +34,7 @@ describe('MessageHelper', () => {
     ],
     tools: [
       {
-        name: 'cubicler.available_servers',
+        name: 'cubicler_availableServers',
         description: 'Get available servers',
         parameters: {
           type: 'object',

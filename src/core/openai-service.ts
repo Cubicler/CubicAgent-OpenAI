@@ -276,7 +276,7 @@ export class OpenAIService {
     currentTools: ChatCompletionTool[]
   ): ChatCompletionTool[] {
     // Early return if not the server tools function
-    if (functionName !== 'cubicler.fetch_server_tools') {
+    if (functionName !== 'cubicler_fetchServerTools') {
       return currentTools;
     }
 
