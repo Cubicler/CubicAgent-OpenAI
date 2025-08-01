@@ -1,9 +1,8 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -32,10 +31,10 @@ jobs:
       env:
         NODE_ENV: test
 
-    - name: Extract version from package.json
+    - name: Extract version from release tag
       id: package-version
       run: |
-        VERSION=$(node -p "require('./package.json').version")
+        VERSION=${GITHUB_REF#refs/tags/v}
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx
