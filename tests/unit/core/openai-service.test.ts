@@ -54,7 +54,7 @@ describe('OpenAIService', () => {
         }
       },
       {
-        name: 'cubicler_fetchServerTools',
+        name: 'cubicler_fetch_server_tools',
         description: 'Fetch server tools',
         parameters: {
           type: 'object',
@@ -342,11 +342,11 @@ describe('OpenAIService', () => {
       expect(result.updatedTools).toEqual(currentTools);
     });
 
-    it('should handle cubicler_fetchServerTools and add new tools', async () => {
+    it('should handle cubicler_fetch_server_tools and add new tools', async () => {
       const mockToolCalls = [{
         id: 'call_123',
         function: {
-          name: 'cubicler_fetchServerTools',
+          name: 'cubicler_fetch_server_tools',
           arguments: '{"serverIdentifier": "test-server"}'
         }
       }] as any[];

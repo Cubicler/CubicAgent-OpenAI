@@ -151,6 +151,13 @@ describe('MessageHelper', () => {
   });
 
   describe('buildSystemMessage', () => {
+    it('should include agent prompt from Cubicler dispatch', () => {
+      const request = createMockAgentRequest();
+      const result = buildSystemMessage(request, mockOpenAIConfig, mockDispatchConfig, 1);
+
+      expect(result).toContain('You are a test agent for unit testing purposes.');
+    });
+
     it('should include message format instructions', () => {
       const request = createMockAgentRequest();
       const result = buildSystemMessage(request, mockOpenAIConfig, mockDispatchConfig, 1);
@@ -197,6 +204,21 @@ describe('MessageHelper', () => {
 
       expect(result).toContain('This is iteration 10 of 10');
       expect(result).toContain('You have 0 remaining iterations');
+    });
+
+    it('should handle missing agent prompt gracefully', () => {
+      const request = createMockAgentRequest();
+      // Create a request without a prompt by omitting it
+      request.agent = {
+        ...request.agent,
+        prompt: undefined as any  // Type assertion to test the undefined case
+      };
+      
+      const result = buildSystemMessage(request, mockOpenAIConfig, mockDispatchConfig, 1);
+
+      // Should still include the format instructions even without agent prompt
+      expect(result).toContain('IMPORTANT: Messages from users will be in JSON format');
+      expect(result).toContain('This is iteration 1 of 10');
     });
   });
 

@@ -21,6 +21,13 @@ export function buildOpenAIMessages(
 
   // Build system message with agent context and iteration info
   const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration);
+  
+  // Debug: Print the complete system content being sent to OpenAI
+  console.log('🔍 DEBUG - Complete system message:', {
+    length: systemContent.length,
+    content: systemContent
+  });
+  
   messages.push({
     role: 'system',
     content: systemContent
@@ -59,8 +66,8 @@ export function buildOpenAIMessages(
 }
 
 /**
- * Build system message with OpenAI-specific context
- * Only adds iteration and token limits - Cubicler handles agent description
+ * Build system message with agent prompt and OpenAI-specific context
+ * Includes the agent's prompt from Cubicler dispatch plus iteration and token limits
  */
 export function buildSystemMessage(
   request: AgentRequest, 
@@ -70,8 +77,13 @@ export function buildSystemMessage(
 ): string {
   let systemMessage = '';
 
+  // Start with the agent's prompt from Cubicler dispatch
+  if (request.agent.prompt) {
+    systemMessage += request.agent.prompt;
+  }
+
   // Add message format instructions for group chat
-  systemMessage += `IMPORTANT: Messages from users will be in JSON format containing sender information:
+  systemMessage += `\n\nIMPORTANT: Messages from users will be in JSON format containing sender information:
 {
   "senderId": "string", // the ID of the sender
   "name": "string",     // the name of the sender  
