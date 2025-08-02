@@ -22,12 +22,6 @@ export function buildOpenAIMessages(
   // Build system message with agent context and iteration info
   const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration);
   
-  // Debug: Print the complete system content being sent to OpenAI
-  console.log('🔍 DEBUG - Complete system message:', {
-    length: systemContent.length,
-    content: systemContent
-  });
-  
   messages.push({
     role: 'system',
     content: systemContent
@@ -109,19 +103,33 @@ When responding, always provide your final response as plain text (not JSON). On
 
 /**
  * Clean and extract final response content from OpenAI
- * Handles JSON responses from OpenAI that might contain content field
+ * Handles potential JSON responses and extracts meaningful content
  */
 export function cleanFinalResponse(content: string | null): string {
   if (!content) {
     return 'No response from OpenAI';
   }
 
-  // Try to parse as JSON first (similar to Cubicler 1.0 behavior)
+  // Try to parse as JSON and extract content field if it exists
+  const extractedContent = tryExtractJsonContent(content);
+  if (extractedContent !== null) {
+    return extractedContent;
+  }
+
+  // Return as plain text if not JSON or no content field found
+  return content;
+}
+
+/**
+ * Attempt to extract content from JSON response
+ * Returns null if not valid JSON or no content field found
+ */
+function tryExtractJsonContent(content: string): string | null {
   try {
     const parsed = JSON.parse(content);
     
     // If it's an object with a content field, extract it
-    if (typeof parsed === 'object' && parsed !== null && 'content' in parsed) {
+    if (isObjectWithContentField(parsed)) {
       const extractedContent = typeof parsed.content === 'string' ? parsed.content : content;
       console.log('Extracted content from JSON response:', {
         originalLength: content.length,
@@ -131,12 +139,19 @@ export function cleanFinalResponse(content: string | null): string {
       return extractedContent;
     }
     
-    // If it's an object but no content field, return the original
-    console.log('JSON response without content field, returning original');
-    return content;
+    // If it's an object but no content field, return null to use original
+    console.log('JSON response without content field, using original');
+    return null;
   } catch {
-    // Not JSON, return as-is
-    console.log('Response is not JSON, returning as plain text');
-    return content;
+    // Not JSON, return null to use original content as plain text
+    console.log('Response is not JSON, using as plain text');
+    return null;
   }
+}
+
+/**
+ * Type guard to check if parsed object has a content field
+ */
+function isObjectWithContentField(parsed: unknown): parsed is { content: unknown } {
+  return typeof parsed === 'object' && parsed !== null && 'content' in parsed;
 }

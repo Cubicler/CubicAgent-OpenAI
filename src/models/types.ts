@@ -49,3 +49,14 @@ export interface ProcessToolCallsResult {
   messages: ChatCompletionMessageParam[];
   tools: ChatCompletionTool[];
 }
+
+/**
+ * Session State
+ * Model for tracking state during iterative conversation sessions
+ */
+export interface SessionState {
+  iteration: number;
+  currentMessages: ChatCompletionMessageParam[];
+  currentTools: ChatCompletionTool[];
+  totalUsedTokens: number;
+}

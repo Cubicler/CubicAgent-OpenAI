@@ -228,7 +228,7 @@ describe('MessageHelper', () => {
       const result = cleanFinalResponse(content);
 
       expect(result).toBe(content);
-      expect(mockConsoleLog).toHaveBeenCalledWith('Response is not JSON, returning as plain text');
+      expect(mockConsoleLog).toHaveBeenCalledWith('Response is not JSON, using as plain text');
     });
 
     it('should extract content from JSON response with content field', () => {
@@ -256,7 +256,7 @@ describe('MessageHelper', () => {
       const result = cleanFinalResponse(jsonContent);
 
       expect(result).toBe(jsonContent);
-      expect(mockConsoleLog).toHaveBeenCalledWith('JSON response without content field, returning original');
+      expect(mockConsoleLog).toHaveBeenCalledWith('JSON response without content field, using original');
     });
 
     it('should handle null content', () => {
@@ -288,7 +288,7 @@ describe('MessageHelper', () => {
       const result = cleanFinalResponse(invalidJson);
 
       expect(result).toBe(invalidJson);
-      expect(mockConsoleLog).toHaveBeenCalledWith('Response is not JSON, returning as plain text');
+      expect(mockConsoleLog).toHaveBeenCalledWith('Response is not JSON, using as plain text');
     });
 
     it('should handle JSON with null content field', () => {

@@ -201,7 +201,10 @@ describe('OpenAIService', () => {
       };
       mockOpenAI.chat.completions.create.mockResolvedValue(mockResponse);
 
-      const messages = [{ role: 'user', content: 'Test message' }] as any[];
+      const messages = [
+        { role: 'system', content: 'You are a test assistant' },
+        { role: 'user', content: 'Test message' }
+      ] as any[];
       const tools = [{
         type: 'function',
         function: {
@@ -240,7 +243,10 @@ describe('OpenAIService', () => {
       };
       mockOpenAI.chat.completions.create.mockResolvedValue(mockResponse);
 
-      const messages = [{ role: 'user', content: 'Test message' }] as any[];
+      const messages = [
+        { role: 'system', content: 'You are a test assistant' },
+        { role: 'user', content: 'Test message' }
+      ] as any[];
       const tools: any[] = [];
 
       await (openAIService as any).callOpenAI(messages, tools);
@@ -276,7 +282,10 @@ describe('OpenAIService', () => {
       };
       mockOpenAI.chat.completions.create.mockResolvedValue(mockResponse);
 
-      const result = await (openAIService as any).callOpenAI([], []);
+      const result = await (openAIService as any).callOpenAI([
+        { role: 'system', content: 'You are a test assistant' },
+        { role: 'user', content: 'Test message' }
+      ], []);
 
       expect(result).toEqual({
         content: null,
@@ -289,11 +298,13 @@ describe('OpenAIService', () => {
       const apiError = new Error('OpenAI API Error');
       mockOpenAI.chat.completions.create.mockRejectedValue(apiError);
 
-      await expect((openAIService as any).callOpenAI([], [])).rejects.toThrow(
+      await expect((openAIService as any).callOpenAI([
+        { role: 'system', content: 'You are a test assistant' }
+      ], [])).rejects.toThrow(
         'OpenAI API call failed: OpenAI API Error'
       );
 
-      expect(mockConsoleError).toHaveBeenCalledWith('❌ OpenAI failed: OpenAI API Error');
+      expect(mockConsoleError).toHaveBeenCalledWith('❌ OpenAI API failed: OpenAI API Error');
     });
 
     it('should handle missing usage information', async () => {
@@ -307,7 +318,9 @@ describe('OpenAIService', () => {
       };
       mockOpenAI.chat.completions.create.mockResolvedValue(mockResponse);
 
-      const result = await (openAIService as any).callOpenAI([], []);
+      const result = await (openAIService as any).callOpenAI([
+        { role: 'system', content: 'You are a test assistant' }
+      ], []);
 
       expect(result.usedTokens).toBe(0);
     });
@@ -411,7 +424,8 @@ describe('OpenAIService', () => {
       expect(result.toolMessages).toEqual([{
         role: 'tool',
         content: JSON.stringify({
-          error: 'Failed to execute failing-tool: Tool execution failed'
+          error: 'Failed to execute failing-tool: Tool execution failed',
+          toolCallId: 'call_123'
         }),
         tool_call_id: 'call_123'
       }]);
