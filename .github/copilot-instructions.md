@@ -1,401 +1,105 @@
-# CubicAgent-OpenAI AI Development Instructions
+# CubicAgent-OpenAI Development Instructions
 
-CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with Cubicler 2.3.0 using CubicAgentKit 2.3.1 as the foundation library. It's both a complete, deployable solution that users can run immediately with just environment configuration, and a reusable npm library for integration into other projects.
+CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent** and **npm library** integrating OpenAI models with Cubicler 2.3.0 using CubicAgentKit 2.3.1. Built for zero-code deployment and library integration.
 
-## 🧱 System Overview
+## 🧱 Core Architecture
 
-CubicAgent-OpenAI is both a **deployable agent application** and a **reusable npm library** that:
-- Available as `@cubicler/cubicagent-openai` npm package with CLI and library exports
-- Runs as a standalone HTTP server using Docker or npm
-- Can be integrated as a library in other Node.js projects
-- Connects to an existing Cubicler instance via environment configuration with **lazy initialization**
-- Uses OpenAI's Chat Completions API for natural language processing
-- Automatically handles multi-turn conversations with session iteration limits
-- Maps Cubicler's MCP tools to OpenAI's function calling format
-- Provides robust retry logic for MCP communication failures
-- Zero-code deployment - just configure .env and run
-- Full TypeScript support with clean exports for library usage
+**Built on CubicAgentKit 2.3.1:**
+- `npm install @cubicler/cubicagentkit@^2.3.1`
+- **CubicAgent** - Main orchestrator with lazy initialization
+- **AxiosAgentClient** - HTTP client for Cubicler MCP
+- **ExpressAgentServer** - HTTP server for endpoints
+- **OpenAI Service** - Handles iterative function calling
 
-**Architecture Philosophy:**
-- **Deployment-first** - Ready to run out of the box with minimal configuration
-- **Library-ready** - Clean npm package exports for integration into other projects
-- **Built on CubicAgentKit 2.3.1** - Uses CubicAgent, AxiosAgentClient, and ExpressAgentServer with lazy initialization
-- **Environment-driven** - All configuration via .env file with Zod validation
-- **Session-aware** - Handles multi-turn conversations with iteration limits
-- **Retry-resilient** - Automatic retry logic for MCP tool calls
-- **Token-conscious** - Tracks and limits token usage per session
-- **Lazy initialization** - Only connects to Cubicler on first dispatch request
-- **TypeScript-first** - Full type definitions and modern ES modules support
+**Key Features:**
+- Lazy initialization (connects on first request)
+- Session iteration loop with limits
+- MCP tool mapping to OpenAI functions
+- Exponential backoff retry logic
+- Dual usage: standalone app + npm library
 
-## 🏗️ Core Architecture Principles
+## ⚙️ Environment Variables (16 total)
 
-### CubicAgentKit Foundation
-CubicAgent-OpenAI is built on top of CubicAgentKit 2.3.1's composition architecture with lazy initialization:
-
-**Foundation Dependency:**
-```bash
-npm install @cubicler/cubicagentkit@^2.3.1
-```
-
-**Core Components:**
-- **CubicAgent** - Main orchestrator from CubicAgentKit with lazy initialization support
-- **AxiosAgentClient** - HTTP client for Cubicler MCP communication
-- **ExpressAgentServer** - HTTP server for agent endpoints
-- **OpenAI Service** - Handles OpenAI API integration and iterative function calling
-
-### Lazy Initialization Architecture
-CubicAgentKit 2.3.1 provides built-in lazy initialization - the agent only connects to Cubicler when the first dispatch request arrives:
-
-**Lazy Initialization Flow:**
-1. Application starts with HTTP server listening on configured port
-2. CubicAgent is configured with Cubicler URL but doesn't connect immediately
-3. On first agent request, CubicAgentKit automatically initializes the connection
-4. Subsequent requests use the established connection
-5. No manual initialization code needed in application
-
-**Key Benefits:**
-- **Fast startup** - Application starts immediately without waiting for Cubicler connection
-- **Fault tolerance** - Can start even if Cubicler is temporarily unavailable
-- **Resource efficiency** - Only establishes connection when needed
-- **Automatic handling** - CubicAgentKit manages the initialization lifecycle
-
-### Session Management Architecture
-Handles multi-turn conversations with OpenAI while respecting limits:
-
-**Session Flow:**
-1. Receive agent request from Cubicler
-2. Start session iteration loop (up to `DISPATCH_SESSION_MAX_ITERATION`)
-3. Get available tools from Cubicler via MCP
-4. Map Cubicler tools to OpenAI function schemas
-5. Send request to OpenAI with available functions
-6. If OpenAI requests tool calls, execute via Cubicler with retry logic
-7. Continue iteration or return final response
-
-**Key Limits:**
-- **Session iterations** - Prevent infinite tool calling loops
-- **Token limits** - Control OpenAI response size per session
-- **MCP retries** - Handle temporary communication failures
-- **Dispatch timeout** - Overall request timeout protection
-
-### OpenAI Integration Patterns
-Following OpenAI's best practices while maintaining Cubicler compatibility:
-
-**Function Calling Flow:**
-- Convert Cubicler MCP tool schemas to OpenAI function definitions
-- Handle OpenAI's function calling responses
-- Execute tool calls through Cubicler's MCP endpoint
-- Format tool results back to OpenAI for continued conversation
-
-**Error Handling Strategy:**
-- OpenAI API errors (rate limits, context length, invalid requests)
-- MCP communication failures with exponential backoff retry
-- Session timeout and iteration limit enforcement
-- Graceful degradation when tools are unavailable
-
-## 📦 Project Structure
-
-```
-src/
-  index.ts                         # Application entry point and startup with CLI and library exports
-  config/
-    environment.ts                 # Environment variable validation with Zod
-    types.ts                       # Configuration type definitions
-  core/
-    agent-memory-handler.ts        # Memory integration with MCP tool handling
-    openai-service.ts              # OpenAI API integration service with iterative function calling
-  models/
-    types.ts                       # Core type definitions and interfaces
-  utils/
-    message-helper.ts              # Message format conversion utilities
-tests/
-  setup.ts                         # Test configuration and setup
-  integration/
-    openai-service.integration.test.ts # Integration tests with OpenAI API
-  unit/
-    config/
-      environment.test.ts          # Configuration validation tests
-    core/
-      agent-memory-handler.test.ts # Memory handler unit tests
-      openai-service.test.ts       # Unit tests for OpenAI service
-    utils/
-      message-helper.test.ts       # Message helper unit tests
-package.json                       # npm package metadata with binary entry and library exports
-.env.example                       # Example environment configuration
-README.md                          # Deployment and library usage documentation
-Dockerfile                         # Docker build configuration  
-docker-compose.yml                 # Docker compose for local development
-vitest.config.ts                   # Vitest test configuration
-eslint.config.js                   # ESLint configuration
-tsconfig.json                      # TypeScript configuration
-LICENSE                           # Apache 2.0 license
-```
-
-## ⚙️ Environment Configuration
-
-### Core Environment Variables (16 total)
-
-The application uses **16 environment variables** for configuration:
-
-**Required Variables (1):**
+**Required:**
 ```env
-OPENAI_API_KEY                   # OpenAI API key (required)
+OPENAI_API_KEY                   # OpenAI API key
 ```
 
-**Transport Configuration:**
+**Transport:**
 ```env
-TRANSPORT_MODE                   # Transport mode: http, stdio (default: http)
-CUBICLER_URL                     # Cubicler instance URL for HTTP transport
-STDIO_COMMAND                    # Command for stdio transport (optional)
-STDIO_ARGS                       # Arguments for stdio command (optional)
-STDIO_CWD                        # Working directory for stdio command (optional)
+TRANSPORT_MODE                   # http, stdio (default: http)
+CUBICLER_URL                     # Cubicler instance URL
+STDIO_COMMAND, STDIO_ARGS, STDIO_CWD  # Optional stdio config
 ```
 
-**OpenAI Configuration:**
+**OpenAI:**
 ```env
-OPENAI_MODEL                     # Model: gpt-4o, gpt-4, gpt-4-turbo, gpt-3.5-turbo (default: gpt-4o)
-OPENAI_TEMPERATURE               # Temperature: 0.0 - 2.0 (default: 0.7)
-OPENAI_SESSION_MAX_TOKENS        # Max tokens per session/response (default: 4096)
-OPENAI_ORG_ID                    # OpenAI organization ID (optional)
-OPENAI_PROJECT_ID                # OpenAI project ID (optional)
-OPENAI_BASE_URL                  # Custom API base URL (optional)
-OPENAI_TIMEOUT                   # API timeout in milliseconds (default: 600000)
-OPENAI_MAX_RETRIES               # Max retry attempts for OpenAI API (default: 2)
+OPENAI_MODEL                     # gpt-4o, gpt-4, gpt-4-turbo, gpt-3.5-turbo
+OPENAI_TEMPERATURE               # 0.0-2.0 (default: 0.7)
+OPENAI_SESSION_MAX_TOKENS        # Max tokens per session (default: 4096)
+OPENAI_ORG_ID, OPENAI_PROJECT_ID, OPENAI_BASE_URL  # Optional
+OPENAI_TIMEOUT, OPENAI_MAX_RETRIES  # API config
 ```
 
-**Memory Configuration (optional):**
+**Memory (optional):**
 ```env
-MEMORY_ENABLED                   # Enable memory integration (default: false)
-MEMORY_TYPE                      # Memory type: memory, sqlite (default: memory)
-MEMORY_DB_PATH                   # SQLite database path (default: ./memories.db)
-MEMORY_MAX_TOKENS                # Max tokens for memory context (default: 2000)
-MEMORY_DEFAULT_IMPORTANCE        # Default importance for memories (default: 0.5)
+MEMORY_ENABLED, MEMORY_TYPE, MEMORY_DB_PATH
+MEMORY_MAX_TOKENS, MEMORY_DEFAULT_IMPORTANCE
 ```
 
-**Dispatch and Communication Settings:**
+**Dispatch:**
 ```env
-DISPATCH_TIMEOUT                 # Overall request timeout in milliseconds (default: 30000)
-MCP_MAX_RETRIES                  # Max retry attempts for MCP communication (default: 3)
-MCP_CALL_TIMEOUT                 # Individual MCP call timeout in milliseconds (default: 10000)
-DISPATCH_SESSION_MAX_ITERATION   # Max iterations per conversation session (default: 10)
-DISPATCH_ENDPOINT                # Agent endpoint path (default: /)
-AGENT_PORT                       # HTTP server port (default: 3000)
+DISPATCH_TIMEOUT, DISPATCH_SESSION_MAX_ITERATION
+MCP_MAX_RETRIES, MCP_CALL_TIMEOUT
+DISPATCH_ENDPOINT, AGENT_PORT
 ```
 
-### Configuration Types
-
-```typescript
-interface OpenAIConfig {
-  apiKey: string;
-  model: 'gpt-4o' | 'gpt-4' | 'gpt-4-turbo' | 'gpt-3.5-turbo';
-  temperature: number;              // 0.0 - 2.0
-  sessionMaxTokens: number;         // Token limit per response
-  organization?: string;            // Optional OpenAI organization ID
-  project?: string;                 // Optional OpenAI project ID
-  baseURL?: string;                 // Optional custom API base URL
-  timeout: number;                  // API timeout (default: 600000ms)
-  maxRetries: number;               // Max retry attempts (default: 2)
-}
-
-interface DispatchConfig {
-  timeout: number;                  // Overall request timeout (ms)
-  mcpMaxRetries: number;           // MCP retry attempts
-  mcpCallTimeout: number;          // Individual MCP call timeout (ms)
-  sessionMaxIteration: number;      // Max conversation turns
-  endpoint: string;                 // Agent endpoint path
-  agentPort: number;               // HTTP server port
-}
-```
-
-## 🎯 Core Services & Responsibilities
+## 🎯 Core Services
 
 ### OpenAIService
-**Purpose:** Handle all OpenAI API communication and iterative function calling loop
-**Key Responsibilities:**
-- Execute iterative function calling loop with `DISPATCH_SESSION_MAX_ITERATION` limit
-- Manage conversation history across multiple OpenAI API calls within a session
-- Build dynamic tools array from available functions via CubicAgentKit
-- Handle OpenAI Chat Completions with function calling enabled
-- Track token usage and enforce `OPENAI_SESSION_MAX_TOKENS` limits
-- Process tool calls through CubicAgent and continue conversation until final response
-
+**Purpose:** Handle OpenAI API and iterative function calling
 **Required Behavior:**
-- Use CubicAgent to get available tools from Cubicler via MCP
-- Convert Cubicler tools to OpenAI function schema format
-- Maintain full conversation context including assistant messages and tool results
-- Stop iteration when OpenAI returns message without tool calls (final response)
-- Handle MCP retry logic through CubicAgentKit
+- Execute session loop with `DISPATCH_SESSION_MAX_ITERATION` limit
+- Use CubicAgent.getTools() to fetch available Cubicler tools
+- Convert Cubicler tools to OpenAI function schemas
+- Maintain conversation context including tool calls/results
+- Stop when OpenAI returns final response (no tool calls)
+- Handle MCP retry through CubicAgentKit
 
 ### MessageBuilder
-**Purpose:** Convert between Cubicler and OpenAI message formats with iteration awareness  
-**Key Responsibilities:**
-- Convert `AgentRequest.messages` to OpenAI message format
-- Build system prompts with iteration context
-- Maintain conversation continuity by preserving tool calls and results
-- Clean final OpenAI responses by removing unwanted prefixes or agent names
-- Format final response content for return to Cubicler
-
+**Purpose:** Convert between Cubicler and OpenAI message formats
 **Required Behavior:**
-- Include iteration information in system messages (e.g., "Iteration 2 of 10")
-- Preserve full conversation including assistant messages with tool_calls
-- Add tool result messages to conversation before next OpenAI call  
-- Clean final response content (remove prefixes like agent names)
-- Return clean text content as final response to Cubicler
+- Convert AgentRequest.messages to OpenAI format
+- Include iteration context in system messages
+- Preserve conversation including assistant tool_calls
+- Clean final responses (remove agent name prefixes)
 
-### SessionManager
-**Purpose:** Control session flow and iteration limits
-**Key Responsibilities:**
-- Enforce `DISPATCH_SESSION_MAX_ITERATION` limits
-- Coordinate between OpenAI calls and tool executions  
-- Handle session timeout and termination conditions
-- Track session metrics (tokens, tools, iterations)
+## 🔧 Session Iteration Pattern
 
-## 🔧 Key Implementation Patterns
-
-### Session Iteration Loop
-The main request handler in OpenAIService implements a controlled loop:
-1. **Initialize session** - Set up iteration counter and context
-2. **Get tools** - Fetch available Cubicler tools via MCP with CubicAgent
-3. **OpenAI request** - Send to OpenAI with function definitions
-4. **Tool execution** - If OpenAI requests tools, execute with retry logic
-5. **Iteration check** - Continue loop or return final response
-6. **Cleanup** - Log session metrics and cleanup resources
-
-### MCP Retry Logic
-All MCP tool calls implement exponential backoff retry through CubicAgentKit:
-- Initial attempt with no delay
-- Retry with increasing delays: 1s, 2s, 4s, etc.
-- Respect `MCP_MAX_RETRIES` configuration
-- Log retry attempts for debugging
-- Fail gracefully after max retries
-
-### Error Handling Strategy
-Different error types handled appropriately:
-- **OpenAI errors** - Rate limits, context length, API failures
-- **MCP errors** - Connection failures, timeout, invalid responses  
-- **Configuration errors** - Invalid environment variables
-- **Session errors** - Iteration limits, timeout, resource exhaustion
-
-## 🚀 Deployment Patterns
-
-### Docker Deployment
-- **Single container** - Contains Node.js app and dependencies
-- **Environment file** - All configuration via .env file
-- **Health checks** - Basic HTTP endpoint health verification
-- **Resource limits** - Appropriate memory/CPU limits for OpenAI usage
-
-### npm Package Deployment  
-- **Global installation** - `npm install -g @cubicler/cubicagent-openai`
-- **Project dependency** - `npm install @cubicler/cubicagent-openai`
-- **Binary executable** - Direct command-line execution with npx
-- **Library integration** - Clean imports for use in other Node.js projects
-- **Configuration validation** - Environment validation on startup
-- **Process management** - Proper signal handling for graceful shutdown
-
-### Library Usage Patterns
-- **Standalone service** - Import and configure OpenAI service directly
-- **HTTP transport** - Connect to external Cubicler instance
-- **Stdio transport** - Launch Cubicler as subprocess
-- **Injected agent** - Use with existing CubicAgent instance
-- **TypeScript support** - Full type definitions and intellisense
-
-### Development Workflow
-- **Local development** - `npm run dev` with watch mode
-- **Environment validation** - Zod schema validation on startup
-- **Structured logging** - JSON logging with correlation IDs
-- **Integration testing** - Tests against real Cubicler and OpenAI APIs
-
-## 🧪 Testing Strategy
-
-### Integration Tests
-- **Cubicler communication** - Full MCP protocol testing
-- **OpenAI integration** - Real API calls with test accounts
-- **Session management** - Multi-turn conversation flows
-- **Error scenarios** - Network failures, API errors, timeouts
-
-### Unit Tests  
-- **Service isolation** - Mock external dependencies
-- **Configuration validation** - Environment variable edge cases
-- **Error handling** - All error paths and retry logic
-- **Tool mapping** - Schema conversion accuracy
-
-### Load Testing
-- **Concurrent sessions** - Multiple simultaneous conversations
-- **Token usage patterns** - Monitor memory and performance
-- **Retry behavior** - Network instability simulation
-- **Resource limits** - Container resource exhaustion testing
-
-## 🔍 Monitoring and Observability
-
-### Structured Logging
-Session-based logging with correlation IDs:
-- **Session lifecycle** - Start, iterations, completion, errors
-- **OpenAI interactions** - Requests, responses, token usage
-- **MCP communications** - Tool calls, retries, failures
-- **Performance metrics** - Response times, resource usage
-
-### Key Metrics
-Application-specific metrics for monitoring:
-- **Token consumption** - Per session and cumulative usage
-- **Session statistics** - Iteration counts, completion rates  
-- **Tool usage patterns** - Most called tools, success rates
-- **Error rates** - By type (OpenAI, MCP, configuration)
-- **Performance data** - Response times, CubicAgentKit lazy initialization timing
-
-## 🧪 Testing Strategy
-
-The project uses **Vitest** as the testing framework with the following test structure:
-
-### Test Categories
-- **Unit Tests** (`tests/unit/`) - Test individual components in isolation
-  - Configuration validation
-  - Message helper functions
-  - OpenAI service logic
-- **Integration Tests** (`tests/integration/`) - Test complete workflows
-  - OpenAI API integration
-  - End-to-end session flows
-
-### Test Commands
-```bash
-npm test                    # Run all tests
-npm run test:watch          # Run tests in watch mode
-npm run test:unit           # Run only unit tests
-npm run test:integration    # Run only integration tests  
-npm run test:coverage       # Run tests with coverage report
-```
-
-### Testing Approach
-- **Mock external dependencies** in unit tests (OpenAI API, CubicAgent)
-- **Use real API calls** in integration tests when configured
-- **Environment variable validation** with comprehensive error cases
-- **Session iteration logic** with various scenarios and limits
-- **Error handling paths** including retry logic and timeout cases
+1. **Initialize** - Set up iteration counter and context
+2. **Get tools** - Fetch via CubicAgent.getTools()
+3. **OpenAI request** - Send with function definitions
+4. **Tool execution** - Execute if OpenAI requests tools
+5. **Iteration check** - Continue or return final response
+6. **Cleanup** - Log metrics
 
 ## ✅ Your Role
 
-When I ask you for code, your job is to:
-• **Maintain CubicAgentKit 2.3.1 patterns** - Use CubicAgent, AxiosAgentClient, ExpressAgentServer with lazy initialization
-• **Preserve function calling loop** - Same iterative conversation with tool building via CubicAgent.getTools()
-• **Keep OpenAI integration patterns** - Same message conversion, tool building, response cleaning  
-• **Map configuration properly** - Use the 16 environment variables as specified
-• **Implement session flow** - Tool discovery → function loading → iterative execution
-• **Handle lazy initialization** - Let CubicAgentKit 2.3.1 handle connection timing automatically
-• **Maintain error handling** - Same error response patterns and iteration limits
-• **Support dual usage** - Ensure code works both as standalone application and npm library
-• **Clean exports** - Provide clear TypeScript exports for library integration
+**MAINTAIN:**
+- CubicAgentKit 2.3.1 patterns with lazy initialization
+- Iterative function calling loop with tool building
+- Message conversion and response cleaning
+- 16 environment variables as specified
+- Error handling and retry patterns
+- Dual usage (standalone + library)
 
-## ✅ DO NOT
-
-• Do not add additional environment variables beyond the specified 16
-• Do not implement complex health check endpoints - keep it simple
-• Do not include Docker scripts folder - keep Dockerfile in root
-• Do not add Prometheus metrics or complex monitoring - use structured logs
-• Do not implement streaming responses - use standard completion format
-• Do not add authentication middleware - focus on core OpenAI integration
-• Do not over-engineer the session management - keep it straightforward
-• Do not include multiple deployment configurations - one Dockerfile only
-• Do not add manual initialization code - let CubicAgentKit 2.3.1 handle lazy initialization
-
-When working on CubicAgent-OpenAI, focus on creating a robust, production-ready OpenAI agent that seamlessly integrates with Cubicler using the CubicAgentKit 2.3.1 foundation while maintaining simplicity and reliability. Ensure the code works both as a standalone deployable application and as a reusable npm library with clean TypeScript exports.
+**DO NOT:**
+- Add environment variables beyond the 16 specified
+- Implement complex health checks or monitoring
+- Add authentication middleware
+- Over-engineer session management
+- Add manual initialization code
+- Implement streaming responses
 
 ---
 

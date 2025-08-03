@@ -81,6 +81,42 @@ export function buildSystemMessage(
 
   // Add recent memory context if available
   if (memory) {
+    systemMessage += `\n\n## Memory Management\nYou have access to a persistent memory system through function calls. Key functions include:
+
+**Storage & Retrieval:**
+- **agentmemory_remember**: Store important information as sentences with tags for future reference
+- **agentmemory_search**: Search for relevant past information using flexible criteria and filters
+- **agentmemory_recall**: Recall a specific memory by its ID
+- **agentmemory_get_short_term**: Get recent memories within token capacity for context
+- **agentmemory_forget**: Remove memories completely by ID (use with caution)
+
+**Memory Management:**
+- **agentmemory_add_to_short_term**: Add memories to short-term storage for immediate context
+- **agentmemory_edit_importance**: Update importance scores (0-1) for existing memories
+- **agentmemory_edit_content**: Update the content/sentence of existing memories
+- **agentmemory_add_tag**: Add tags to existing memories for better categorization
+- **agentmemory_remove_tag**: Remove tags from memories (cannot result in empty tags)
+- **agentmemory_replace_tags**: Replace all tags for a memory with new ones
+
+**Best Practices:**
+- Store information as clear, complete sentences (e.g., "John prefers direct communication")
+- Always include meaningful tags for categorization (required, cannot be empty)
+- Use importance scores (0-1) to prioritize critical information
+- Search and recall relevant context before responding to maintain continuity
+
+**Examples of what to store:**
+- User preferences and personal information
+- Important decisions or commitments made
+- Key facts about ongoing projects or topics
+- Previous conversations' important outcomes
+
+When to use memory:
+- Store information when users share personal details, preferences, or important facts
+- Search memory when users reference past conversations or ask about previous topics
+- Recall specific memories when users mention particular topics or IDs
+- Delete information when users correct previous statements or request removal
+
+Always use memory functions to maintain conversation continuity and provide personalized responses.`;
     try {
       const recentMemories = memory.getShortTermMemories();
       if (recentMemories && recentMemories.length > 0) {
@@ -118,46 +154,6 @@ When responding, always provide your final response as plain text (not JSON). On
   if (request.tools.length > 0) {
     const remainingIterations = dispatchConfig.sessionMaxIteration - iteration;
     systemMessage += `\nYou have ${remainingIterations} remaining iterations to make tool calls if needed.`;
-  }
-
-  // Add memory management instructions if memory is available
-  if (memory) {
-    systemMessage += `\n\n## Memory Management\nYou have access to a persistent memory system through function calls. Key functions include:
-
-**Storage & Retrieval:**
-- **memory_remember**: Store important information as sentences with tags for future reference
-- **memory_search**: Search for relevant past information using flexible criteria and filters
-- **memory_recall**: Recall a specific memory by its ID
-- **memory_get_short_term**: Get recent memories within token capacity for context
-- **memory_forget**: Remove memories completely by ID (use with caution)
-
-**Memory Management:**
-- **memory_add_to_short_term**: Add memories to short-term storage for immediate context
-- **memory_edit_importance**: Update importance scores (0-1) for existing memories
-- **memory_edit_content**: Update the content/sentence of existing memories
-- **memory_add_tag**: Add tags to existing memories for better categorization
-- **memory_remove_tag**: Remove tags from memories (cannot result in empty tags)
-- **memory_replace_tags**: Replace all tags for a memory with new ones
-
-**Best Practices:**
-- Store information as clear, complete sentences (e.g., "John prefers direct communication")
-- Always include meaningful tags for categorization (required, cannot be empty)
-- Use importance scores (0-1) to prioritize critical information
-- Search and recall relevant context before responding to maintain continuity
-
-**Examples of what to store:**
-- User preferences and personal information
-- Important decisions or commitments made
-- Key facts about ongoing projects or topics
-- Previous conversations' important outcomes
-
-When to use memory:
-- Store information when users share personal details, preferences, or important facts
-- Search memory when users reference past conversations or ask about previous topics
-- Recall specific memories when users mention particular topics or IDs
-- Delete information when users correct previous statements or request removal
-
-Always use memory functions to maintain conversation continuity and provide personalized responses.`;
   }
 
   return systemMessage;

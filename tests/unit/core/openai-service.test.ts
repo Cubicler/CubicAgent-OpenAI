@@ -621,7 +621,8 @@ describe('OpenAIService', () => {
         mockRequest,
         mockOpenAIConfig,
         mockDispatchConfig,
-        1
+        1,
+        undefined
       );
     });
 

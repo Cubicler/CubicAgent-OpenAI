@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createOpenAIServiceFromEnv } from './core/openai-service.js';
+import { createOpenAIServiceFromEnv } from './core/openai-service-factory.js';
 
 /**
  * Main entry point for CubicAgent-OpenAI
@@ -45,3 +45,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   });
 }
+
+// Export for library usage
+export { createOpenAIServiceFromEnv } from './core/openai-service-factory.js';
+export { OpenAIService } from './core/openai-service.js';

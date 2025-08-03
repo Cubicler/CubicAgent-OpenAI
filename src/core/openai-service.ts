@@ -1,20 +1,11 @@
-import { 
-  CubicAgent, 
-  AxiosAgentClient, 
-  ExpressAgentServer, 
-  StdioAgentClient, 
-  StdioAgentServer,
-  createDefaultMemoryRepository,
-  createSQLiteMemoryRepository,
-  type MemoryRepository
-} from '@cubicler/cubicagentkit';
+import { CubicAgent, type MemoryRepository } from '@cubicler/cubicagentkit';
 import type { AgentRequest, AgentClient, AgentTool, RawAgentResponse } from '@cubicler/cubicagentkit';
 import OpenAI from 'openai';
-import { loadConfig, type OpenAIConfig, DispatchConfig } from '../config/environment.js';
+import { type OpenAIConfig, DispatchConfig } from '../config/environment.js';
 import type { ChatCompletionMessageParam, ChatCompletionTool, ChatCompletionMessageToolCall} from 'openai/resources/chat/completions.js';
 import type { OpenAIRequestParams, OpenAIResponse, ToolExecutionResult, ProcessToolCallsResult, SessionState } from '../models/types.js';
 import { buildOpenAIMessages, buildSystemMessage, cleanFinalResponse } from '../utils/message-helper.js';
-import { AgentMemoryHandler } from './agent-memory-handler.js';
+import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 
 /**
  * OpenAIService
@@ -35,11 +26,18 @@ export class OpenAIService {
   private openai: OpenAI;
   private openaiConfig: OpenAIConfig;
   private dispatchConfig: DispatchConfig;
+  private internalToolHandler: InternalToolHandling | undefined;
 
-  constructor(cubicAgent: CubicAgent, openaiConfig: OpenAIConfig, dispatchConfig: DispatchConfig) {
+  constructor(
+    cubicAgent: CubicAgent, 
+    openaiConfig: OpenAIConfig, 
+    dispatchConfig: DispatchConfig,
+    internalToolHandler?: InternalToolHandling
+  ) {
     this.cubicAgent = cubicAgent;
     this.openaiConfig = openaiConfig;
     this.dispatchConfig = dispatchConfig;
+    this.internalToolHandler = internalToolHandler;
 
     // Initialize OpenAI client with full configuration
     this.openai = new OpenAI({
@@ -132,7 +130,7 @@ export class OpenAIService {
       this.logIterationResult(result);
 
       if (this.shouldContinueIteration(result)) {
-        await this.processIterationContinuation(result, sessionState, client, memory);
+        await this.processIterationContinuation(result, sessionState, client);
       } else {
         return this.buildFinalResponse(result, sessionState.totalUsedTokens);
       }
@@ -148,7 +146,7 @@ export class OpenAIService {
     return {
       iteration: 1,
       currentMessages: buildOpenAIMessages(request, this.openaiConfig, this.dispatchConfig, 1, memory),
-      currentTools: this.buildOpenAITools(request.tools, memory),
+      currentTools: this.buildOpenAITools(request.tools),
       totalUsedTokens: 0
     };
   }
@@ -183,15 +181,13 @@ export class OpenAIService {
   private async processIterationContinuation(
     result: OpenAIResponse,
     sessionState: SessionState,
-    client: AgentClient,
-    memory?: MemoryRepository
+    client: AgentClient
   ): Promise<void> {
     const updatedState = await this.processToolCallsAndContinue(
       result,
       sessionState.currentMessages,
       sessionState.currentTools,
-      client,
-      memory
+      client
     );
     
     sessionState.currentMessages = updatedState.messages;
@@ -359,8 +355,7 @@ export class OpenAIService {
     result: OpenAIResponse,
     messages: ChatCompletionMessageParam[],
     tools: ChatCompletionTool[],
-    client: AgentClient,
-    memory?: MemoryRepository
+    client: AgentClient
   ): Promise<ProcessToolCallsResult> {
     // Validate that toolCalls exists (should always be true when called from executeIterativeLoop)
     if (!result.toolCalls || result.toolCalls.length === 0) {
@@ -378,8 +373,7 @@ export class OpenAIService {
     const { toolMessages, updatedTools } = await this.executeToolCalls(
       result.toolCalls,
       client,
-      tools,
-      memory
+      tools
     );
 
     // Add tool results to conversation
@@ -392,7 +386,7 @@ export class OpenAIService {
    * Convert Cubicler AgentTool to OpenAI ChatCompletionTool format
    * Also adds memory tools if memory is available
    */
-  private buildOpenAITools(tools: AgentTool[], memory?: MemoryRepository): ChatCompletionTool[] {
+  private buildOpenAITools(tools: AgentTool[]): ChatCompletionTool[] {
     const openAITools = tools.map(tool => ({
       type: 'function' as const,
       function: {
@@ -402,20 +396,12 @@ export class OpenAIService {
       }
     }));
 
-    // Add memory tools if memory is available
-    if (memory) {
-      const memoryHandler = new AgentMemoryHandler(memory);
-      openAITools.push(...memoryHandler.buildMemoryTools() as any); // eslint-disable-line @typescript-eslint/no-explicit-any -- Type compatibility with OpenAI tools
+    // Add internal tools if handler is available
+    if (this.internalToolHandler) {
+      openAITools.push(...this.internalToolHandler.buildTools() as any); // eslint-disable-line @typescript-eslint/no-explicit-any -- Type compatibility with OpenAI tools
     }
 
     return openAITools;
-  }
-
-  /**
-   * Check if a function name is a memory function
-   */
-  private isMemoryFunction(functionName: string): boolean {
-    return functionName.startsWith('memory_');
   }
 
   /**
@@ -424,8 +410,7 @@ export class OpenAIService {
   private async executeToolCalls(
     toolCalls: ChatCompletionMessageToolCall[],
     client: AgentClient,
-    currentTools: ChatCompletionTool[],
-    memory?: MemoryRepository
+    currentTools: ChatCompletionTool[]
   ): Promise<ToolExecutionResult> {
     this.validateToolCalls(toolCalls);
     
@@ -433,7 +418,7 @@ export class OpenAIService {
     let updatedTools = [...currentTools];
 
     for (const toolCall of toolCalls) {
-      const toolResult = await this.executeSingleToolCall(toolCall, client, memory);
+      const toolResult = await this.executeSingleToolCall(toolCall, client);
       
       // Handle special server tools fetching
       updatedTools = this.handleServerToolsFetch(toolCall.function.name, toolResult.result, updatedTools);
@@ -474,8 +459,7 @@ export class OpenAIService {
    */
   private async executeSingleToolCall(
     toolCall: ChatCompletionMessageToolCall,
-    client: AgentClient,
-    memory?: MemoryRepository
+    client: AgentClient
   ): Promise<{ result: unknown }> {
     try {
       const functionName = toolCall.function.name;
@@ -483,14 +467,13 @@ export class OpenAIService {
 
       console.log(`🔧 ${functionName}(${Object.keys(parameters).length} params)`);
 
-      // Intercept memory function calls
-      if (memory && this.isMemoryFunction(functionName)) {
-        const memoryHandler = new AgentMemoryHandler(memory);
-        const result = await memoryHandler.executeMemoryFunction(functionName, parameters);
+      // Intercept internal function calls (memory, Cubicler, etc.)
+      if (this.internalToolHandler && this.internalToolHandler.canHandle(functionName)) {
+        const result = await this.internalToolHandler.executeFunction(functionName, parameters);
         return { result };
       }
 
-      // Call the tool via Cubicler client for non-memory functions
+      // Call the tool via Cubicler client for server tools
       const result = await client.callTool(functionName, parameters);
       return { result };
 
@@ -549,65 +532,5 @@ export class OpenAIService {
     console.log(`➕ Added ${newOpenAITools.length} server tools`);
     
     return [...currentTools, ...newOpenAITools];
-  }
-}
-
-/**
- * Factory function to create OpenAIService from environment variables
- */
-export async function createOpenAIServiceFromEnv(): Promise<OpenAIService> {
-  const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig } = loadConfig();
-
-  // Initialize memory if configured
-  let memory: MemoryRepository | undefined;
-  if (memoryConfig.enabled) {
-    try {
-      memory = memoryConfig.type === 'sqlite' 
-        ? await createSQLiteMemoryRepository(
-            memoryConfig.dbPath,
-            memoryConfig.maxTokens,
-            memoryConfig.defaultImportance
-          )
-        : await createDefaultMemoryRepository(
-            memoryConfig.maxTokens,
-            memoryConfig.defaultImportance
-          );
-      console.log(`💾 Memory enabled: ${memoryConfig.type} (${memoryConfig.maxTokens} tokens)`);
-    } catch (error) {
-      console.warn(`⚠️ Memory initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  // Initialize client based on transport mode
-  let client: AgentClient;
-  if (transportConfig.mode === 'stdio') {
-    if (!transportConfig.command) {
-      throw new Error('STDIO_COMMAND is required for stdio transport mode');
-    }
-    client = new StdioAgentClient(
-      transportConfig.command,
-      transportConfig.args,
-      transportConfig.cwd
-    );
-    const server = new StdioAgentServer();
-    const cubicAgent = new CubicAgent(client, server, memory);
-    
-    const transportMode = transportConfig.mode;
-    console.log(`🚀 ${openaiConfig.model} ready - ${transportMode} transport - stdio`);
-    
-    return new OpenAIService(cubicAgent, openaiConfig, dispatchConfig);
-  } else {
-    if (!transportConfig.cubiclerUrl) {
-      throw new Error('CUBICLER_URL is required for HTTP transport mode');
-    }
-    client = new AxiosAgentClient(transportConfig.cubiclerUrl, dispatchConfig.mcpCallTimeout);
-    const server = new ExpressAgentServer(dispatchConfig.agentPort, dispatchConfig.endpoint);
-    const cubicAgent = new CubicAgent(client, server, memory);
-    
-    const transportMode = transportConfig.mode;
-    const port = dispatchConfig.agentPort;
-    console.log(`🚀 ${openaiConfig.model} ready - ${transportMode} transport - ${port}`);
-    
-    return new OpenAIService(cubicAgent, openaiConfig, dispatchConfig);
   }
 }
