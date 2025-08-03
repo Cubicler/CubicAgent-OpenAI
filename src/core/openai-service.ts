@@ -1,9 +1,9 @@
 import { CubicAgent, AxiosAgentClient, ExpressAgentServer } from '@cubicler/cubicagentkit';
-import type { AgentRequest, AgentClient, AgentTool } from '@cubicler/cubicagentkit';
+import type { AgentRequest, AgentClient, AgentTool, RawAgentResponse } from '@cubicler/cubicagentkit';
 import OpenAI from 'openai';
 import type { OpenAIConfig, DispatchConfig } from '../config/environment.js';
 import type { ChatCompletionMessageParam, ChatCompletionTool, ChatCompletionMessageToolCall} from 'openai/resources/chat/completions.js';
-import type { OpenAIRequestParams, OpenAIResponse, ToolExecutionResult, AgentResponse, ProcessToolCallsResult, SessionState } from '../models/types.js';
+import type { OpenAIRequestParams, OpenAIResponse, ToolExecutionResult, ProcessToolCallsResult, SessionState } from '../models/types.js';
 import { buildOpenAIMessages, buildSystemMessage, cleanFinalResponse } from '../utils/message-helper.js';
 
 /**
@@ -77,7 +77,7 @@ export class OpenAIService {
   private async executeIterativeLoop(
     request: AgentRequest,
     client: AgentClient
-  ): Promise<AgentResponse> {
+  ): Promise<RawAgentResponse> {
     const sessionState = this.initializeSession(request);
     
     while (sessionState.iteration <= this.dispatchConfig.sessionMaxIteration) {
@@ -156,7 +156,7 @@ export class OpenAIService {
   /**
    * Build the final response when no more tool calls are needed
    */
-  private buildFinalResponse(result: OpenAIResponse, totalUsedTokens: number): AgentResponse {
+  private buildFinalResponse(result: OpenAIResponse, totalUsedTokens: number): RawAgentResponse {
     console.log('✅ Final response received');
     
     const cleanedContent = cleanFinalResponse(result.content);
@@ -251,21 +251,29 @@ export class OpenAIService {
   /**
    * Parse OpenAI API response and extract relevant data
    */
-  private parseOpenAIResponse(response: any): OpenAIResponse {
-    const message = response.choices?.[0]?.message;
+  private parseOpenAIResponse(response: unknown): OpenAIResponse {
+    // Type guard for OpenAI response structure
+    if (!response || typeof response !== 'object' || !('choices' in response)) {
+      throw new Error('Invalid OpenAI response: missing choices array');
+    }
+    
+    const responseObj = response as { choices?: Array<{ message?: unknown }>; usage?: { total_tokens?: number } };
+    const message = responseObj.choices?.[0]?.message;
     if (!message) {
       throw new Error('Invalid OpenAI response: missing message in choices');
     }
 
-    const usedTokens = response.usage?.total_tokens || 0;
+    const usedTokens = responseObj.usage?.total_tokens || 0;
 
+    const messageObj = message as { content?: string | null; tool_calls?: unknown };
+    
     const result: OpenAIResponse = {
-      content: message.content || null,
+      content: messageObj.content || null,
       usedTokens
     };
 
-    if (message.tool_calls) {
-      result.toolCalls = message.tool_calls;
+    if (messageObj.tool_calls) {
+      result.toolCalls = messageObj.tool_calls as any; // eslint-disable-line @typescript-eslint/no-explicit-any -- OpenAI tool_calls structure is complex
     }
 
     return result;

@@ -1,6 +1,6 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.0`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.1`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
@@ -255,7 +255,7 @@ tests/
 ### Key Components
 
 - **OpenAIService**: Main service class handling OpenAI API integration and iterative function calling
-- **CubicAgent**: Core orchestrator from CubicAgentKit 2.0.1 with lazy initialization
+- **CubicAgent**: Core orchestrator from CubicAgentKit 2.3.1 with lazy initialization
 - **Message Helper**: Utilities for converting between Cubicler and OpenAI message formats
 - **Environment Configuration**: Zod-based validation for all 11 environment variables
 - **Lazy Initialization**: Automatic connection to Cubicler on first dispatch request
@@ -306,7 +306,7 @@ All errors are handled gracefully with structured logging and appropriate HTTP s
 This agent integrates with Cubicler 2.3 using the lazy initialization pattern:
 
 1. **Application Startup**: Agent starts HTTP server immediately without connecting to Cubicler
-2. **Lazy Connection**: CubicAgentKit 2.0.1 automatically connects on first dispatch request
+2. **Lazy Connection**: CubicAgentKit 2.3.1 automatically connects on first dispatch request
 3. **Tool Discovery**: Agent fetches available MCP tools from Cubicler
 4. **Function Calling**: OpenAI can call tools, agent executes via MCP, continues conversation
 5. **Session Management**: Handles multi-turn conversations with iteration and token limits
@@ -319,7 +319,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 ## 🔗 Related Projects
 
 - [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework 2.0
-- [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK 2.0.1
+- [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK 2.3.1
 
 ## 🐛 Troubleshooting
 

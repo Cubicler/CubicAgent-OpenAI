@@ -31,15 +31,6 @@ export interface ToolExecutionResult {
   updatedTools: ChatCompletionTool[];
 }
 
-/**
- * Agent Response
- * Model for the final agent response
- */
-export interface AgentResponse {
-  type: 'text';
-  content: string;
-  usedToken: number;
-}
 
 /**
  * Process Tool Calls Result
