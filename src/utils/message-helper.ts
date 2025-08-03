@@ -1,4 +1,4 @@
-import type { AgentRequest } from '@cubicler/cubicagentkit';
+import type { AgentRequest, MemoryRepository } from '@cubicler/cubicagentkit';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
 import type { OpenAIConfig, DispatchConfig } from '../config/environment.js';
 
@@ -15,12 +15,13 @@ export function buildOpenAIMessages(
   request: AgentRequest, 
   openaiConfig: OpenAIConfig,
   dispatchConfig: DispatchConfig,
-  iteration: number = 1
+  iteration: number = 1,
+  memory?: MemoryRepository
 ): ChatCompletionMessageParam[] {
   const messages: ChatCompletionMessageParam[] = [];
 
   // Build system message with agent context and iteration info
-  const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration);
+  const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration, memory);
   
   messages.push({
     role: 'system',
@@ -62,18 +63,39 @@ export function buildOpenAIMessages(
 /**
  * Build system message with agent prompt and OpenAI-specific context
  * Includes the agent's prompt from Cubicler dispatch plus iteration and token limits
+ * Also includes recent memory context if available
  */
 export function buildSystemMessage(
   request: AgentRequest, 
   openaiConfig: OpenAIConfig,
   dispatchConfig: DispatchConfig,
-  iteration: number
+  iteration: number,
+  memory?: MemoryRepository
 ): string {
   let systemMessage = '';
 
   // Start with the agent's prompt from Cubicler dispatch
   if (request.agent.prompt) {
     systemMessage += request.agent.prompt;
+  }
+
+  // Add recent memory context if available
+  if (memory) {
+    try {
+      const recentMemories = memory.getShortTermMemories();
+      if (recentMemories && recentMemories.length > 0) {
+        systemMessage += '\n\n## Recent Memory\nHere are some recent relevant memories that might help with the current conversation:\n\n';
+        
+        for (const memoryItem of recentMemories) {
+          const tagsDisplay = memoryItem.tags.length > 0 ? ` [${memoryItem.tags.join(', ')}]` : '';
+          systemMessage += `- ${memoryItem.sentence}${tagsDisplay}\n`;
+        }
+        
+        systemMessage += '\nUse this information to provide more contextual and relevant responses.';
+      }
+    } catch (error) {
+      console.warn('Failed to retrieve memory context:', error instanceof Error ? error.message : 'Unknown error');
+    }
   }
 
   // Add message format instructions for group chat
@@ -96,6 +118,46 @@ When responding, always provide your final response as plain text (not JSON). On
   if (request.tools.length > 0) {
     const remainingIterations = dispatchConfig.sessionMaxIteration - iteration;
     systemMessage += `\nYou have ${remainingIterations} remaining iterations to make tool calls if needed.`;
+  }
+
+  // Add memory management instructions if memory is available
+  if (memory) {
+    systemMessage += `\n\n## Memory Management\nYou have access to a persistent memory system through function calls. Key functions include:
+
+**Storage & Retrieval:**
+- **memory_remember**: Store important information as sentences with tags for future reference
+- **memory_search**: Search for relevant past information using flexible criteria and filters
+- **memory_recall**: Recall a specific memory by its ID
+- **memory_get_short_term**: Get recent memories within token capacity for context
+- **memory_forget**: Remove memories completely by ID (use with caution)
+
+**Memory Management:**
+- **memory_add_to_short_term**: Add memories to short-term storage for immediate context
+- **memory_edit_importance**: Update importance scores (0-1) for existing memories
+- **memory_edit_content**: Update the content/sentence of existing memories
+- **memory_add_tag**: Add tags to existing memories for better categorization
+- **memory_remove_tag**: Remove tags from memories (cannot result in empty tags)
+- **memory_replace_tags**: Replace all tags for a memory with new ones
+
+**Best Practices:**
+- Store information as clear, complete sentences (e.g., "John prefers direct communication")
+- Always include meaningful tags for categorization (required, cannot be empty)
+- Use importance scores (0-1) to prioritize critical information
+- Search and recall relevant context before responding to maintain continuity
+
+**Examples of what to store:**
+- User preferences and personal information
+- Important decisions or commitments made
+- Key facts about ongoing projects or topics
+- Previous conversations' important outcomes
+
+When to use memory:
+- Store information when users share personal details, preferences, or important facts
+- Search memory when users reference past conversations or ask about previous topics
+- Recall specific memories when users mention particular topics or IDs
+- Delete information when users correct previous statements or request removal
+
+Always use memory functions to maintain conversation continuity and provide personalized responses.`;
   }
 
   return systemMessage;

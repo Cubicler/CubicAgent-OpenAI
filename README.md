@@ -1,16 +1,21 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.1`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.1`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
-CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
+CubicAgent-OpenAI is both a **deployable agent application** and a **reusable npm library** that:
 
+- ✅ **NPM Package** - Available as `@cubicler/cubicagent-openai` with CLI and library exports
+- ✅ **Multiple transport modes** - HTTP and stdio communication support
+- ✅ **CubicAgent injection** - Can be used as internal agent within Cubicler
+- ✅ **Memory integration** - Optional sentence-based memory with SQLite or in-memory storage
 - ✅ **Lazy initialization** - Only connects to Cubicler on first dispatch request
 - ✅ **Multi-turn conversations** - Handles iterative function calling with session limits
 - ✅ **OpenAI integration** - Supports GPT-4o, GPT-4, GPT-4-turbo, GPT-3.5-turbo
 - ✅ **MCP tool mapping** - Converts Cubicler tools to OpenAI function calling format
 - ✅ **Retry logic** - Robust MCP communication with exponential backoff
+- ✅ **TypeScript support** - Full type definitions and modern ES modules
 - ✅ **Zero-code deployment** - Just configure `.env` and run
 
 ## 🚀 Quick Start
@@ -22,6 +27,18 @@ CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
 - Running Cubicler 2.3 instance (connects automatically on first request)
 
 ### Installation
+
+#### Option 1: npm Package (Recommended)
+
+```bash
+# Install as a dependency in your project
+npm install @cubicler/cubicagent-openai
+
+# Or install globally for CLI usage
+npm install -g @cubicler/cubicagent-openai
+```
+
+#### Option 2: Clone and Build
 
 ```bash
 # Clone the repository
@@ -44,7 +61,6 @@ Create a `.env` file with the following variables:
 
 ```env
 # Required Configuration
-CUBICLER_URL=http://localhost:8080
 OPENAI_API_KEY=your-openai-api-key-here
 
 # OpenAI Configuration (with defaults)
@@ -59,6 +75,22 @@ OPENAI_SESSION_MAX_TOKENS=4096
 # OPENAI_TIMEOUT=600000
 # OPENAI_MAX_RETRIES=2
 
+# Transport Configuration
+TRANSPORT_MODE=http
+# For HTTP transport (default):
+CUBICLER_URL=http://localhost:8080
+# For stdio transport:
+# STDIO_COMMAND=npx
+# STDIO_ARGS=cubicler,--server
+# STDIO_CWD=/path/to/cubicler
+
+# Memory Configuration (optional)
+MEMORY_ENABLED=false
+MEMORY_TYPE=memory
+MEMORY_DB_PATH=./memories.db
+MEMORY_MAX_TOKENS=2000
+MEMORY_DEFAULT_IMPORTANCE=0.5
+
 # Dispatch Configuration (with defaults)
 DISPATCH_TIMEOUT=30000
 MCP_MAX_RETRIES=3
@@ -69,6 +101,21 @@ AGENT_PORT=3000
 ```
 
 ### Running the Service
+
+#### Using npm Package
+
+```bash
+# Run directly with npx (recommended)
+npx @cubicler/cubicagent-openai
+
+# Or if installed globally
+cubicagent-openai
+
+# With environment file
+npx @cubicler/cubicagent-openai --env-file .env
+```
+
+#### Using Source Code
 
 ```bash
 # Development mode
@@ -85,7 +132,148 @@ The service will be available at `http://localhost:3000` with:
 - **Agent endpoint** - Default `/` (configurable via `DISPATCH_ENDPOINT`)
 - **Health checks** - Built into CubicAgentKit for monitoring
 
-## 🐳 Docker Deployment
+## 🏗️ Usage Patterns
+
+### As a Standalone Application
+
+```bash
+# Using npm global installation
+npx @cubicler/cubicagent-openai
+
+# Or using local clone
+npm run dev
+```
+
+### As a Library in Your Project
+
+#### Basic Library Usage
+
+```typescript
+import { OpenAIService } from '@cubicler/cubicagent-openai';
+import { createOpenAIConfig, createDispatchConfig } from '@cubicler/cubicagent-openai/config';
+
+// Create configuration
+const openaiConfig = createOpenAIConfig({
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: 'gpt-4o',
+  temperature: 0.7,
+  sessionMaxTokens: 4096
+});
+
+const dispatchConfig = createDispatchConfig({
+  timeout: 30000,
+  mcpMaxRetries: 3,
+  sessionMaxIteration: 10
+});
+
+// Initialize service
+const service = new OpenAIService(openaiConfig, dispatchConfig);
+
+// Process a request
+const response = await service.processRequest(agentRequest, cubicAgent);
+```
+
+#### HTTP Transport Mode
+
+```typescript
+import { OpenAIService } from '@cubicler/cubicagent-openai';
+
+const service = new OpenAIService(
+  openaiConfig,
+  dispatchConfig, 
+  { mode: 'http', cubiclerUrl: 'http://localhost:8080' },
+  { enabled: true, type: 'sqlite', dbPath: './agent-memory.db' }
+);
+await service.start();
+```
+
+#### Injected Agent (Internal to Cubicler)
+
+```typescript
+import { OpenAIService } from '@cubicler/cubicagent-openai';
+
+// Use existing CubicAgent instance
+const service = new OpenAIService(existingCubicAgent, openaiConfig, dispatchConfig);
+const response = await service.processRequest(request, client);
+```
+
+#### Stdio Transport
+
+```typescript
+const service = new OpenAIService(
+  openaiConfig,
+  dispatchConfig,
+  { mode: 'stdio', command: 'npx', args: ['cubicler', '--server'] }
+);
+await service.start();
+```
+
+## � NPM Package Features
+
+### Installation Options
+
+```bash
+# Install as project dependency
+npm install @cubicler/cubicagent-openai
+
+# Install globally for CLI usage
+npm install -g @cubicler/cubicagent-openai
+
+# Use without installation
+npx @cubicler/cubicagent-openai
+```
+
+### Library Exports
+
+The npm package provides clean exports for integration:
+
+```typescript
+// Main service class
+import { OpenAIService } from '@cubicler/cubicagent-openai';
+
+// Configuration helpers
+import { 
+  createOpenAIConfig, 
+  createDispatchConfig,
+  validateEnvironment 
+} from '@cubicler/cubicagent-openai/config';
+
+// Type definitions
+import { 
+  OpenAIConfig, 
+  DispatchConfig, 
+  TransportConfig 
+} from '@cubicler/cubicagent-openai/types';
+
+// Utility functions
+import { 
+  buildSystemMessage, 
+  convertToOpenAIMessages 
+} from '@cubicler/cubicagent-openai/utils';
+```
+
+### CLI Usage
+
+When installed globally or used with npx:
+
+```bash
+# Start with default configuration
+cubicagent-openai
+
+# Start with custom environment file
+cubicagent-openai --env-file /path/to/.env
+
+# Start with specific port
+cubicagent-openai --port 8080
+
+# Show help
+cubicagent-openai --help
+
+# Show version
+cubicagent-openai --version
+```
+
+## �🐳 Docker Deployment
 
 ### Quick Docker Run
 
@@ -219,14 +407,19 @@ npm run test:integration
 
 ## 📁 Project Structure
 
+### Source Code Structure
+
 ```text
 src/
-├── index.ts                         # Application entry point with lazy initialization
+├── index.ts                         # Application entry point with CLI and library exports
 ├── config/
 │   ├── environment.ts               # Environment variable validation with Zod
 │   └── types.ts                     # Configuration type definitions
 ├── core/
+│   ├── agent-memory-handler.ts      # Memory integration with MCP tool handling
 │   └── openai-service.ts            # OpenAI API integration with iterative function calling
+├── models/
+│   └── types.ts                     # Core type definitions and interfaces
 └── utils/
     └── message-helper.ts            # Message format conversion utilities
 tests/
@@ -237,17 +430,36 @@ tests/
     ├── config/
     │   └── environment.test.ts      # Configuration validation tests
     ├── core/
+    │   ├── agent-memory-handler.test.ts # Memory handler unit tests
     │   └── openai-service.test.ts   # Unit tests for OpenAI service
     └── utils/
         └── message-helper.test.ts   # Message helper unit tests
-├── .env.example                     # Example environment configuration
-├── Dockerfile                       # Docker build configuration
-├── docker-compose.yml               # Docker compose for local development
-├── vitest.config.ts                 # Vitest test configuration
-├── eslint.config.js                 # ESLint configuration
-├── tsconfig.json                    # TypeScript configuration
-├── package.json                     # npm scripts and dependencies
-└── LICENSE                          # Apache 2.0 license
+```
+
+### NPM Package Structure
+
+```text
+dist/                                # Compiled JavaScript output
+├── index.js                         # Main entry point and CLI binary
+├── config/                          # Configuration exports
+├── core/                            # Core service classes
+├── models/                          # Type definitions
+└── utils/                           # Utility functions
+
+package.json                         # NPM package metadata with binary entry
+├── "main": "dist/index.js"         # Library entry point
+├── "bin": { "cubicagent-openai": "dist/index.js" } # CLI binary
+├── "type": "module"                 # ES modules support
+└── "exports": { ... }               # Clean import paths
+
+README.md                            # This documentation
+LICENSE                              # Apache 2.0 license
+.env.example                         # Example environment configuration
+Dockerfile                           # Docker build configuration
+docker-compose.yml                   # Docker compose for local development
+vitest.config.ts                     # Vitest test configuration
+eslint.config.js                     # ESLint configuration
+tsconfig.json                        # TypeScript configuration
 ```
 
 ## 🛠️ Development
@@ -318,8 +530,9 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ## 🔗 Related Projects
 
-- [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework 2.0
+- [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework 2.3
 - [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK 2.3.1
+- [@cubicler/cubicagent-openai](https://www.npmjs.com/package/@cubicler/cubicagent-openai) - This package on npm
 
 ## 🐛 Troubleshooting
 

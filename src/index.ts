@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
-import { loadConfig } from './config/environment.js';
-import { OpenAIService } from './core/openai-service.js';
+import { createOpenAIServiceFromEnv } from './core/openai-service.js';
 
 /**
  * Main entry point for CubicAgent-OpenAI
@@ -9,32 +8,10 @@ import { OpenAIService } from './core/openai-service.js';
  */
 async function main() {
   try {
-    // Load and validate configuration
-    console.log('Loading configuration...');
-    const config = loadConfig();
-    
-    console.log('Configuration loaded successfully:', {
-      model: config.openai.model,
-      temperature: config.openai.temperature,
-      maxTokens: config.openai.sessionMaxTokens,
-      maxIterations: config.dispatch.sessionMaxIteration,
-      agentPort: config.dispatch.agentPort
-    });
+    console.log('Loading configuration and initializing OpenAI service...');
 
-    // Get Cubicler URL from environment
-    const cubiclerUrl = process.env['CUBICLER_URL'];
-    if (!cubiclerUrl) {
-      throw new Error('CUBICLER_URL environment variable is required');
-    }
-
-    console.log('Initializing OpenAI service...', { cubiclerUrl });
-
-    // Create and start the OpenAI service
-    const openaiService = new OpenAIService(
-      config.openai,
-      config.dispatch,
-      cubiclerUrl
-    );
+    // Create the OpenAI service from environment variables
+    const openaiService = await createOpenAIServiceFromEnv();
 
     // Start the service
     await openaiService.start();

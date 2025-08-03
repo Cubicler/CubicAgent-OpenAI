@@ -14,6 +14,8 @@ describe('OpenAI Service Real API Integration', () => {
   let openAIService: OpenAIService;
   let realOpenAIConfig: OpenAIConfig;
   let mockDispatchConfig: DispatchConfig;
+  let mockTransportConfig: TransportConfig;
+  let mockMemoryConfig: MemoryConfig;
   let mockAgentClient: AgentClient;
   let realOpenAI: OpenAI;
 
@@ -78,6 +80,22 @@ describe('OpenAI Service Real API Integration', () => {
       sessionMaxIteration: 3, // Lower iteration limit for testing
       endpoint: '/',
       agentPort: 3000
+    };
+
+    mockTransportConfig = {
+      mode: 'http' as const,
+      cubiclerUrl: 'http://localhost:8080',
+      command: undefined,
+      args: [],
+      cwd: undefined
+    };
+
+    mockMemoryConfig = {
+      enabled: false,
+      type: 'memory' as const,
+      dbPath: './test-memories.db',
+      maxTokens: 1000,
+      defaultImportance: 0.5
     };
 
     // Create real OpenAI client for direct testing
@@ -188,14 +206,15 @@ describe('OpenAI Service Real API Integration', () => {
   describe('OpenAIService Integration', () => {
     it.skipIf(!REAL_OPENAI_API_KEY)('should initialize OpenAIService with real API key', () => {
       console.log('🧪 Testing OpenAIService initialization...');
-      const cubiclerUrl = 'http://localhost:8080';
+      
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
       
       expect(() => {
-        openAIService = new OpenAIService(
-          realOpenAIConfig,
-          mockDispatchConfig,
-          cubiclerUrl
-        );
+        openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, mockDispatchConfig);
       }).not.toThrow();
       
       expect(openAIService).toBeDefined();
@@ -204,12 +223,14 @@ describe('OpenAI Service Real API Integration', () => {
 
     it.skipIf(!REAL_OPENAI_API_KEY)('should call OpenAI API through private callOpenAI method', async () => {
       console.log('🧪 Testing callOpenAI method with real API...');
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        realOpenAIConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, mockDispatchConfig);
 
       const messages = [
         {
@@ -237,12 +258,14 @@ describe('OpenAI Service Real API Integration', () => {
 
     it.skipIf(!REAL_OPENAI_API_KEY)('should handle tool execution through executeToolCalls method', async () => {
       console.log('🧪 Testing executeToolCalls method...');
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        realOpenAIConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, mockDispatchConfig);
 
       // Mock a tool call response
       const mockToolCalls = [
@@ -294,12 +317,14 @@ describe('OpenAI Service Real API Integration', () => {
 
     it.skipIf(!REAL_OPENAI_API_KEY)('should handle full iterative conversation flow', async () => {
       console.log('🧪 Testing full iterative conversation flow...');
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        realOpenAIConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, mockDispatchConfig);
 
       const request = createMockAgentRequest();
       
@@ -334,11 +359,13 @@ describe('OpenAI Service Real API Integration', () => {
         sessionMaxIteration: 1
       };
       
-      openAIService = new OpenAIService(
-        realOpenAIConfig,
-        limitedDispatchConfig,
-        cubiclerUrl
-      );
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, limitedDispatchConfig);
 
       const request = createMockAgentRequest();
       
@@ -370,12 +397,13 @@ describe('OpenAI Service Real API Integration', () => {
         model: 'invalid-model-name' as any
       };
       
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        invalidConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, invalidConfig, mockDispatchConfig);
 
       const messages = [
         {
@@ -391,12 +419,14 @@ describe('OpenAI Service Real API Integration', () => {
 
     it.skipIf(!REAL_OPENAI_API_KEY)('should track token usage accurately', async () => {
       console.log('🧪 Testing token usage tracking...');
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        realOpenAIConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, mockDispatchConfig);
 
       const messages = [
         {
@@ -432,12 +462,13 @@ describe('OpenAI Service Real API Integration', () => {
         timeout: 1 // 1ms timeout - should fail
       };
       
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        timeoutConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, timeoutConfig, mockDispatchConfig);
 
       const messages = [
         {
@@ -453,12 +484,13 @@ describe('OpenAI Service Real API Integration', () => {
 
     it.skipIf(!REAL_OPENAI_API_KEY)('should handle rate limiting gracefully', async () => {
       console.log('🧪 Testing rate limiting handling...');
-      const cubiclerUrl = 'http://localhost:8080';
-      openAIService = new OpenAIService(
-        realOpenAIConfig,
-        mockDispatchConfig,
-        cubiclerUrl
-      );
+      // Create mock CubicAgent
+      const mockCubicAgent = {
+        start: vi.fn(),
+        stop: vi.fn()
+      } as any;
+      
+      openAIService = new OpenAIService(mockCubicAgent, realOpenAIConfig, mockDispatchConfig);
 
       // Make multiple rapid requests to potentially trigger rate limiting
       const promises = Array.from({ length: 3 }, (_, i) => 

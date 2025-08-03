@@ -177,6 +177,20 @@ describe('Environment Configuration', () => {
           timeout: 600000,
           maxRetries: 2
         },
+        transport: {
+          mode: 'http' as const,
+          cubiclerUrl: 'http://localhost:8080',
+          command: undefined,
+          args: [],
+          cwd: undefined
+        },
+        memory: {
+          enabled: true,
+          type: 'memory' as const,
+          dbPath: './test-memories.db',
+          maxTokens: 1000,
+          defaultImportance: 0.7
+        },
         dispatch: {
           timeout: 25000,
           mcpMaxRetries: 5,

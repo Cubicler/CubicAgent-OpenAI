@@ -1,26 +1,31 @@
 # CubicAgent-OpenAI AI Development Instructions
 
-CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent application** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with Cubicler 2.3.0 using CubicAgentKit 2.3.1 as the foundation library. It's a complete, deployable solution that users can run immediately with just environment configuration.
+CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with Cubicler 2.3.0 using CubicAgentKit 2.3.1 as the foundation library. It's both a complete, deployable solution that users can run immediately with just environment configuration, and a reusable npm library for integration into other projects.
 
 ## 🧱 System Overview
 
-CubicAgent-OpenAI is a **deployable agent application** (not a library) that:
+CubicAgent-OpenAI is both a **deployable agent application** and a **reusable npm library** that:
+- Available as `@cubicler/cubicagent-openai` npm package with CLI and library exports
 - Runs as a standalone HTTP server using Docker or npm
+- Can be integrated as a library in other Node.js projects
 - Connects to an existing Cubicler instance via environment configuration with **lazy initialization**
 - Uses OpenAI's Chat Completions API for natural language processing
 - Automatically handles multi-turn conversations with session iteration limits
 - Maps Cubicler's MCP tools to OpenAI's function calling format
 - Provides robust retry logic for MCP communication failures
 - Zero-code deployment - just configure .env and run
+- Full TypeScript support with clean exports for library usage
 
 **Architecture Philosophy:**
 - **Deployment-first** - Ready to run out of the box with minimal configuration
+- **Library-ready** - Clean npm package exports for integration into other projects
 - **Built on CubicAgentKit 2.3.1** - Uses CubicAgent, AxiosAgentClient, and ExpressAgentServer with lazy initialization
 - **Environment-driven** - All configuration via .env file with Zod validation
 - **Session-aware** - Handles multi-turn conversations with iteration limits
 - **Retry-resilient** - Automatic retry logic for MCP tool calls
 - **Token-conscious** - Tracks and limits token usage per session
 - **Lazy initialization** - Only connects to Cubicler on first dispatch request
+- **TypeScript-first** - Full type definitions and modern ES modules support
 
 ## 🏗️ Core Architecture Principles
 
@@ -91,12 +96,15 @@ Following OpenAI's best practices while maintaining Cubicler compatibility:
 
 ```
 src/
-  index.ts                         # Application entry point and startup with lazy initialization
+  index.ts                         # Application entry point and startup with CLI and library exports
   config/
     environment.ts                 # Environment variable validation with Zod
     types.ts                       # Configuration type definitions
   core/
+    agent-memory-handler.ts        # Memory integration with MCP tool handling
     openai-service.ts              # OpenAI API integration service with iterative function calling
+  models/
+    types.ts                       # Core type definitions and interfaces
   utils/
     message-helper.ts              # Message format conversion utilities
 tests/
@@ -107,12 +115,13 @@ tests/
     config/
       environment.test.ts          # Configuration validation tests
     core/
+      agent-memory-handler.test.ts # Memory handler unit tests
       openai-service.test.ts       # Unit tests for OpenAI service
     utils/
       message-helper.test.ts       # Message helper unit tests
-package.json                       # npm scripts and dependencies (uses Vitest for testing)
+package.json                       # npm package metadata with binary entry and library exports
 .env.example                       # Example environment configuration
-README.md                          # Deployment and usage documentation
+README.md                          # Deployment and library usage documentation
 Dockerfile                         # Docker build configuration  
 docker-compose.yml                 # Docker compose for local development
 vitest.config.ts                   # Vitest test configuration
@@ -123,24 +132,29 @@ LICENSE                           # Apache 2.0 license
 
 ## ⚙️ Environment Configuration
 
-### Core Environment Variables (11 total)
+### Core Environment Variables (16 total)
 
-The application uses **11 environment variables** for configuration:
+The application uses **16 environment variables** for configuration:
 
 **Required Variables (1):**
 ```env
-CUBICLER_URL                     # Cubicler instance URL (required for MCP communication)
+OPENAI_API_KEY                   # OpenAI API key (required)
 ```
 
-**OpenAI Configuration (4 core + 5 optional):**
+**Transport Configuration:**
 ```env
-# Core OpenAI Settings
-OPENAI_API_KEY                   # OpenAI API key (required)
-OPENAI_MODEL                     # Model: gpt-4o, gpt-4, gpt-4-turbo, gpt-3.5-turbo
-OPENAI_TEMPERATURE               # Temperature: 0.0 - 2.0 (controls randomness)
-OPENAI_SESSION_MAX_TOKENS        # Max tokens per session/response
+TRANSPORT_MODE                   # Transport mode: http, stdio (default: http)
+CUBICLER_URL                     # Cubicler instance URL for HTTP transport
+STDIO_COMMAND                    # Command for stdio transport (optional)
+STDIO_ARGS                       # Arguments for stdio command (optional)
+STDIO_CWD                        # Working directory for stdio command (optional)
+```
 
-# Optional OpenAI Settings
+**OpenAI Configuration:**
+```env
+OPENAI_MODEL                     # Model: gpt-4o, gpt-4, gpt-4-turbo, gpt-3.5-turbo (default: gpt-4o)
+OPENAI_TEMPERATURE               # Temperature: 0.0 - 2.0 (default: 0.7)
+OPENAI_SESSION_MAX_TOKENS        # Max tokens per session/response (default: 4096)
 OPENAI_ORG_ID                    # OpenAI organization ID (optional)
 OPENAI_PROJECT_ID                # OpenAI project ID (optional)
 OPENAI_BASE_URL                  # Custom API base URL (optional)
@@ -148,7 +162,16 @@ OPENAI_TIMEOUT                   # API timeout in milliseconds (default: 600000)
 OPENAI_MAX_RETRIES               # Max retry attempts for OpenAI API (default: 2)
 ```
 
-**Dispatch and Communication Settings (6):**
+**Memory Configuration (optional):**
+```env
+MEMORY_ENABLED                   # Enable memory integration (default: false)
+MEMORY_TYPE                      # Memory type: memory, sqlite (default: memory)
+MEMORY_DB_PATH                   # SQLite database path (default: ./memories.db)
+MEMORY_MAX_TOKENS                # Max tokens for memory context (default: 2000)
+MEMORY_DEFAULT_IMPORTANCE        # Default importance for memories (default: 0.5)
+```
+
+**Dispatch and Communication Settings:**
 ```env
 DISPATCH_TIMEOUT                 # Overall request timeout in milliseconds (default: 30000)
 MCP_MAX_RETRIES                  # Max retry attempts for MCP communication (default: 3)
@@ -262,9 +285,18 @@ Different error types handled appropriately:
 
 ### npm Package Deployment  
 - **Global installation** - `npm install -g @cubicler/cubicagent-openai`
-- **Binary executable** - Direct command-line execution
+- **Project dependency** - `npm install @cubicler/cubicagent-openai`
+- **Binary executable** - Direct command-line execution with npx
+- **Library integration** - Clean imports for use in other Node.js projects
 - **Configuration validation** - Environment validation on startup
 - **Process management** - Proper signal handling for graceful shutdown
+
+### Library Usage Patterns
+- **Standalone service** - Import and configure OpenAI service directly
+- **HTTP transport** - Connect to external Cubicler instance
+- **Stdio transport** - Launch Cubicler as subprocess
+- **Injected agent** - Use with existing CubicAgent instance
+- **TypeScript support** - Full type definitions and intellisense
 
 ### Development Workflow
 - **Local development** - `npm run dev` with watch mode
@@ -344,14 +376,16 @@ When I ask you for code, your job is to:
 • **Maintain CubicAgentKit 2.3.1 patterns** - Use CubicAgent, AxiosAgentClient, ExpressAgentServer with lazy initialization
 • **Preserve function calling loop** - Same iterative conversation with tool building via CubicAgent.getTools()
 • **Keep OpenAI integration patterns** - Same message conversion, tool building, response cleaning  
-• **Map configuration properly** - Use the 11 environment variables as specified
+• **Map configuration properly** - Use the 16 environment variables as specified
 • **Implement session flow** - Tool discovery → function loading → iterative execution
 • **Handle lazy initialization** - Let CubicAgentKit 2.3.1 handle connection timing automatically
 • **Maintain error handling** - Same error response patterns and iteration limits
+• **Support dual usage** - Ensure code works both as standalone application and npm library
+• **Clean exports** - Provide clear TypeScript exports for library integration
 
 ## ✅ DO NOT
 
-• Do not add additional environment variables beyond the specified 11
+• Do not add additional environment variables beyond the specified 16
 • Do not implement complex health check endpoints - keep it simple
 • Do not include Docker scripts folder - keep Dockerfile in root
 • Do not add Prometheus metrics or complex monitoring - use structured logs
@@ -361,7 +395,7 @@ When I ask you for code, your job is to:
 • Do not include multiple deployment configurations - one Dockerfile only
 • Do not add manual initialization code - let CubicAgentKit 2.3.1 handle lazy initialization
 
-When working on CubicAgent-OpenAI, focus on creating a robust, production-ready OpenAI agent that seamlessly integrates with Cubicler using the CubicAgentKit 2.3.1 foundation while maintaining simplicity and reliability.
+When working on CubicAgent-OpenAI, focus on creating a robust, production-ready OpenAI agent that seamlessly integrates with Cubicler using the CubicAgentKit 2.3.1 foundation while maintaining simplicity and reliability. Ensure the code works both as a standalone deployable application and as a reusable npm library with clean TypeScript exports.
 
 ---
 

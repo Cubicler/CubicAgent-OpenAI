@@ -115,12 +115,32 @@ describe('OpenAIService', () => {
       initialize: vi.fn() as any
     } as AgentClient;
 
-    // Create OpenAIService instance
-    openAIService = new OpenAIService(
-      mockOpenAIConfig,
-      mockDispatchConfig,
-      'http://localhost:8080'
-    );
+    // Create transport config for testing
+    const mockTransportConfig = {
+      mode: 'http' as const,
+      cubiclerUrl: 'http://localhost:8080',
+      command: undefined,
+      args: [],
+      cwd: undefined
+    };
+
+    // Create memory config for testing  
+    const mockMemoryConfig = {
+      enabled: false,
+      type: 'memory' as const,
+      dbPath: './test-memories.db',
+      maxTokens: 2000,
+      defaultImportance: 0.5
+    };
+
+    // Create a mock CubicAgent
+    const mockCubicAgent = {
+      start: vi.fn(),
+      stop: vi.fn()
+    } as any;
+
+    // Create OpenAIService instance with injected CubicAgent
+    openAIService = new OpenAIService(mockCubicAgent, mockOpenAIConfig, mockDispatchConfig);
   });
 
   afterEach(() => {
@@ -141,7 +161,7 @@ describe('OpenAIService', () => {
     });
 
     it('should log initialization with correct parameters', () => {
-      expect(mockConsoleLog).toHaveBeenCalledWith(`🚀 ${mockOpenAIConfig.model} ready - port:${mockDispatchConfig.agentPort}`);
+      expect(mockConsoleLog).toHaveBeenCalledWith(`🚀 ${mockOpenAIConfig.model} ready - using injected CubicAgent`);
     });
   });
 
@@ -688,7 +708,7 @@ describe('OpenAIService', () => {
 
       expect(mockCubicAgent.start).toHaveBeenCalledWith(expect.any(Function));
       expect(mockConsoleLog).toHaveBeenCalledWith(
-        `🚀 ${mockOpenAIConfig.model} ready - port:${mockDispatchConfig.agentPort}`
+        `🚀 ${mockOpenAIConfig.model} ready - using injected CubicAgent`
       );
     });
 
