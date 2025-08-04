@@ -17,6 +17,8 @@ CubicAgent-OpenAI is a **ready-to-deploy OpenAI agent** and **npm library** inte
 - MCP tool mapping to OpenAI functions
 - Exponential backoff retry logic
 - Dual usage: standalone app + npm library
+- Memory integration with SQLite or in-memory storage
+- Internal tool aggregation for memory functions
 
 ## ⚙️ Environment Variables (16 total)
 
@@ -92,6 +94,8 @@ DISPATCH_ENDPOINT, AGENT_PORT
 - 16 environment variables as specified
 - Error handling and retry patterns
 - Dual usage (standalone + library)
+- Memory integration patterns with internal tools
+- SOLID principles and clean code standards
 
 **DO NOT:**
 - Add environment variables beyond the 16 specified

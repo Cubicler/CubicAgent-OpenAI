@@ -146,54 +146,76 @@ npm run dev
 
 ### As a Library in Your Project
 
-#### Basic Library Usage
+#### Using the Factory (Recommended)
 
 ```typescript
-import { OpenAIService } from '@cubicler/cubicagent-openai';
-import { createOpenAIConfig, createDispatchConfig } from '@cubicler/cubicagent-openai/config';
+import { createOpenAIServiceFromEnv } from '@cubicler/cubicagent-openai';
 
-// Create configuration
-const openaiConfig = createOpenAIConfig({
-  apiKey: process.env.OPENAI_API_KEY!,
-  model: 'gpt-4o',
-  temperature: 0.7,
-  sessionMaxTokens: 4096
-});
+// Create service from environment variables (automatically handles all configuration)
+const service = await createOpenAIServiceFromEnv();
 
-const dispatchConfig = createDispatchConfig({
-  timeout: 30000,
-  mcpMaxRetries: 3,
-  sessionMaxIteration: 10
-});
-
-// Initialize service
-const service = new OpenAIService(openaiConfig, dispatchConfig);
-
-// Process a request
-const response = await service.processRequest(agentRequest, cubicAgent);
-```
-
-#### HTTP Transport Mode
-
-```typescript
-import { OpenAIService } from '@cubicler/cubicagent-openai';
-
-const service = new OpenAIService(
-  openaiConfig,
-  dispatchConfig, 
-  { mode: 'http', cubiclerUrl: 'http://localhost:8080' },
-  { enabled: true, type: 'sqlite', dbPath: './agent-memory.db' }
-);
+// Start the service
 await service.start();
 ```
 
-#### Injected Agent (Internal to Cubicler)
+#### Direct Service Construction (Advanced)
+
+```typescript
+import { CubicAgent, AxiosAgentClient, ExpressAgentServer } from '@cubicler/cubicagentkit';
+import { OpenAIService } from '@cubicler/cubicagent-openai';
+
+// Create CubicAgent with HTTP transport
+const client = new AxiosAgentClient('http://localhost:8080');
+const server = new ExpressAgentServer(3000);
+const cubicAgent = new CubicAgent(client, server);
+
+// Create OpenAI configuration
+const openaiConfig = {
+  apiKey: process.env.OPENAI_API_KEY!,
+  model: 'gpt-4o' as const,
+  temperature: 0.7,
+  sessionMaxTokens: 4096
+};
+
+const dispatchConfig = {
+  timeout: 30000,
+  mcpMaxRetries: 3,
+  sessionMaxIteration: 10,
+  endpoint: '/',
+  agentPort: 3000,
+  mcpCallTimeout: 10000
+};
+
+// Initialize service
+const service = new OpenAIService(cubicAgent, openaiConfig, dispatchConfig);
+await service.start();
+```
+
+#### Using with Memory Integration
+
+```typescript
+import { createOpenAIServiceFromEnv } from '@cubicler/cubicagent-openai';
+
+// Set memory environment variables
+process.env.MEMORY_ENABLED = 'true';
+process.env.MEMORY_TYPE = 'sqlite';
+process.env.MEMORY_DB_PATH = './agent-memory.db';
+
+// Service automatically includes memory tools
+const service = await createOpenAIServiceFromEnv();
+await service.start();
+```
+
+#### Processing Individual Requests (Injected Agent)
 
 ```typescript
 import { OpenAIService } from '@cubicler/cubicagent-openai';
+import type { AgentRequest, AgentClient } from '@cubicler/cubicagentkit';
 
-// Use existing CubicAgent instance
+// Use existing CubicAgent instance (for injection scenarios)
 const service = new OpenAIService(existingCubicAgent, openaiConfig, dispatchConfig);
+
+// Process a single request
 const response = await service.processRequest(request, client);
 ```
 
@@ -228,27 +250,14 @@ npx @cubicler/cubicagent-openai
 The npm package provides clean exports for integration:
 
 ```typescript
-// Main service class
-import { OpenAIService } from '@cubicler/cubicagent-openai';
-
-// Configuration helpers
-import { 
-  createOpenAIConfig, 
-  createDispatchConfig,
-  validateEnvironment 
-} from '@cubicler/cubicagent-openai/config';
-
-// Type definitions
-import { 
-  OpenAIConfig, 
-  DispatchConfig, 
-  TransportConfig 
-} from '@cubicler/cubicagent-openai/types';
+// Main service and factory
+import { OpenAIService, createOpenAIServiceFromEnv } from '@cubicler/cubicagent-openai';
 
 // Utility functions
 import { 
   buildSystemMessage, 
-  convertToOpenAIMessages 
+  buildOpenAIMessages,
+  cleanFinalResponse 
 } from '@cubicler/cubicagent-openai/utils';
 ```
 

@@ -2,14 +2,7 @@ import { z } from 'zod';
 import 'dotenv/config';
 
 /**
-    dispatch: {
-      timeout: parseInt(process.env['DISPATCH_TIMEOUT'] || '30000'),
-      mcpMaxRetries: parseInt(process.env['MCP_MAX_RETRIES'] || '3'),
-      mcpCallTimeout: parseInt(process.env['MCP_CALL_TIMEOUT'] || '10000'),
-      sessionMaxIteration: parseInt(process.env['DISPATCH_SESSION_MAX_ITERATION'] || '10'),
-      endpoint: process.env['DISPATCH_ENDPOINT'] || '/',
-      agentPort: parseInt(process.env['AGENT_PORT'] || '3000'),
-    },ronment Configuration Schema
+ * Environment Configuration Schema
  * Core: 8 required environment variables as specified in requirements
  * Optional: Additional OpenAI configuration for advanced use cases
  */
