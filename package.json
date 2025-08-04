@@ -20,7 +20,8 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "prestart": "npm run build"
+    "prestart": "npm run build",
+    "publish:manual": "npm run build && npm publish --access public"
   },
   "keywords": [
     "openai",
