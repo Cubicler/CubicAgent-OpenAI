@@ -32,10 +32,14 @@ jobs:
       env:
         NODE_ENV: test
 
-    - name: Extract version from release tag
+    - name: Extract version from release tag or package.json
       id: package-version
       run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
+        if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+        else
+          VERSION=$(node -p "require('./package.json').version")
+        fi
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx
