@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { OpenAIService } from '../../src/core/openai-service.js';
-import type { OpenAIConfig, DispatchConfig } from '../../src/config/environment.js';
+import type { OpenAIConfig, DispatchConfig, TransportConfig, MemoryConfig } from '../../src/config/environment.js';
 import type { AgentRequest, AgentClient } from '@cubicler/cubicagentkit';
 import OpenAI from 'openai';
 import { config } from 'dotenv';
@@ -91,7 +91,7 @@ describe('OpenAI Service Real API Integration', () => {
     };
 
     mockMemoryConfig = {
-      enabled: false,
+      enabled: true,
       type: 'memory' as const,
       dbPath: './test-memories.db',
       maxTokens: 1000,

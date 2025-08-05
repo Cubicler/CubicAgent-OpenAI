@@ -1,5 +1,5 @@
 import { CubicAgent, type MemoryRepository } from '@cubicler/cubicagentkit';
-import type { AgentRequest, AgentClient, AgentTool, RawAgentResponse } from '@cubicler/cubicagentkit';
+import type { AgentRequest, AgentClient, AgentTool, RawAgentResponse, AgentResponse } from '@cubicler/cubicagentkit';
 import OpenAI from 'openai';
 import { type OpenAIConfig, DispatchConfig } from '../config/environment.js';
 import type { ChatCompletionMessageParam, ChatCompletionTool, ChatCompletionMessageToolCall} from 'openai/resources/chat/completions.js';
@@ -86,22 +86,13 @@ export class OpenAIService {
   }
 
   /**
-   * Process a request directly (for external agents)
+   * Dispatch a request using CubicAgent's new dispatch method
    * This method can be called directly when using the injected CubicAgent constructor
    */
-  async processRequest(request: AgentRequest, client: AgentClient): Promise<RawAgentResponse> {
+  async dispatch(request: AgentRequest): Promise<AgentResponse> {
     console.log(`📨 ${request.agent.name} | ${request.tools.length} tools | ${request.messages.length} msgs`);
     
-    try {
-      return await this.executeIterativeLoop(request, client);
-    } catch (error) {
-      console.error(`❌ ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return {
-        type: 'text' as const,
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        usedToken: 0
-      };
-    }
+    return await this.cubicAgent.dispatch(request);
   }
 
   /**

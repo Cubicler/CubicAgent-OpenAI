@@ -215,8 +215,8 @@ import type { AgentRequest, AgentClient } from '@cubicler/cubicagentkit';
 // Use existing CubicAgent instance (for injection scenarios)
 const service = new OpenAIService(existingCubicAgent, openaiConfig, dispatchConfig);
 
-// Process a single request
-const response = await service.processRequest(request, client);
+// Process a single request using the new dispatch method
+const response = await service.dispatch(request);
 ```
 
 #### Stdio Transport
