@@ -125,7 +125,7 @@ describe('MemoryGetShortTermTool', () => {
 
     it('should handle unknown errors', async () => {
       (mockMemoryRepository.getShortTermMemories as any).mockImplementation(() => {
-        // eslint-disable-next-line @typescript-eslint/only-throw-error -- Testing non-Error throws
+         
         throw 'String error';
       });
 

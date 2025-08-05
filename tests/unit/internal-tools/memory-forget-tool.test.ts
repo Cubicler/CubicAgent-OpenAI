@@ -123,7 +123,7 @@ describe('MemoryForgetTool', () => {
     });
 
     it('should handle unknown errors', async () => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- Testing non-Error throws
+       
       (mockMemoryRepository.forget as any).mockRejectedValue('String error');
 
       const result = await tool.execute({

@@ -6,9 +6,11 @@ import {
   StdioAgentServer,
   createDefaultMemoryRepository,
   createSQLiteMemoryRepository,
-  type MemoryRepository
+  type MemoryRepository,
+  type JWTAuthConfig,
+  type JWTMiddlewareConfig
 } from '@cubicler/cubicagentkit';
-import { loadConfig, type TransportConfig, type DispatchConfig, type MemoryConfig } from '../config/environment.js';
+import { loadConfig, type TransportConfig, type DispatchConfig, type MemoryConfig, type JWTConfig } from '../config/environment.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 import { InternalToolAggregator } from './internal-tool-aggregator.js';
 import { OpenAIService } from './openai-service.js';
@@ -30,7 +32,7 @@ import { MemoryReplaceTagsTool } from '../internal-tools/memory/memory-replace-t
  * Factory function to create OpenAIService from environment variables
  */
 export async function createOpenAIServiceFromEnv(): Promise<OpenAIService> {
-  const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig } = loadConfig();
+  const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig, jwt: jwtConfig } = loadConfig();
 
   // Initialize memory if configured
   const memory = await initializeMemory(memoryConfig);
@@ -39,7 +41,7 @@ export async function createOpenAIServiceFromEnv(): Promise<OpenAIService> {
   const internalToolHandler = createInternalToolHandler(memory);
 
   // Initialize client and CubicAgent based on transport mode
-  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, memory);
+  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
 
   return new OpenAIService(cubicAgent, openaiConfig, dispatchConfig, internalToolHandler);
 }
@@ -105,12 +107,13 @@ function createInternalToolHandler(memory: MemoryRepository | undefined): Intern
 async function createCubicAgent(
   transportConfig: TransportConfig, 
   dispatchConfig: DispatchConfig, 
+  jwtConfig: JWTConfig,
   memory: MemoryRepository | undefined
 ): Promise<CubicAgent> {
   if (transportConfig.mode === 'stdio') {
     return createStdioCubicAgent(transportConfig, memory);
   } else {
-    return createHttpCubicAgent(transportConfig, dispatchConfig, memory);
+    return createHttpCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
   }
 }
 
@@ -144,17 +147,115 @@ function createStdioCubicAgent(
 function createHttpCubicAgent(
   transportConfig: TransportConfig,
   dispatchConfig: DispatchConfig,
+  jwtConfig: JWTConfig,
   memory: MemoryRepository | undefined
 ): CubicAgent {
   if (!transportConfig.cubiclerUrl) {
     throw new Error('CUBICLER_URL is required for HTTP transport mode');
   }
 
+  // Create client with optional JWT authentication
   const client = new AxiosAgentClient(transportConfig.cubiclerUrl, dispatchConfig.mcpCallTimeout);
+  
+  // Configure JWT auth for client if enabled
+  if (jwtConfig.enabled) {
+    const authConfig = createJWTAuthConfig(jwtConfig);
+    if (authConfig) {
+      client.useJWTAuth(authConfig);
+      console.log(`🔐 JWT auth enabled for client: ${jwtConfig.type}`);
+    }
+  }
+
+  // Create server with optional JWT middleware
   const server = new ExpressAgentServer(dispatchConfig.agentPort, dispatchConfig.endpoint);
+  
+  // Configure JWT middleware for server if enabled
+  if (jwtConfig.enabled && (jwtConfig.verificationSecret || jwtConfig.verificationPublicKey)) {
+    const middlewareConfig = createJWTMiddlewareConfig(jwtConfig);
+    if (middlewareConfig) {
+      server.useJWTAuth(middlewareConfig);
+      console.log(`🔐 JWT middleware enabled for server`);
+    }
+  }
+
   const cubicAgent = new CubicAgent(client, server, memory);
   
   console.log(`🚀 OpenAI ready - ${transportConfig.mode} transport - ${dispatchConfig.agentPort}`);
   
   return cubicAgent;
+}
+
+/**
+ * Create JWT auth configuration for the client from environment settings
+ */
+function createJWTAuthConfig(jwtConfig: JWTConfig): JWTAuthConfig | null {
+  if (!jwtConfig.enabled) {
+    return null;
+  }
+
+  if (jwtConfig.type === 'static') {
+    if (!jwtConfig.token) {
+      console.warn('⚠️ JWT_TOKEN is required for static JWT authentication');
+      return null;
+    }
+    return {
+      type: 'static',
+      token: jwtConfig.token
+    };
+  } else {
+    if (!jwtConfig.clientId || !jwtConfig.clientSecret || !jwtConfig.tokenEndpoint) {
+      console.warn('⚠️ JWT_CLIENT_ID, JWT_CLIENT_SECRET, and JWT_TOKEN_ENDPOINT are required for OAuth JWT authentication');
+      return null;
+    }
+    
+    const oauthConfig: any = { // eslint-disable-line @typescript-eslint/no-explicit-any -- Need to build config dynamically
+      type: 'oauth',
+      clientId: jwtConfig.clientId,
+      clientSecret: jwtConfig.clientSecret,
+      tokenEndpoint: jwtConfig.tokenEndpoint,
+      grantType: jwtConfig.grantType
+    };
+
+    // Only add optional properties if they're defined
+    if (jwtConfig.scope) {
+      oauthConfig.scope = jwtConfig.scope;
+    }
+    if (jwtConfig.refreshToken) {
+      oauthConfig.refreshToken = jwtConfig.refreshToken;
+    }
+
+    return oauthConfig;
+  }
+}
+
+/**
+ * Create JWT middleware configuration for the server from environment settings
+ */
+function createJWTMiddlewareConfig(jwtConfig: JWTConfig): JWTMiddlewareConfig | null {
+  if (!jwtConfig.enabled) {
+    return null;
+  }
+
+  const verification: any = { // eslint-disable-line @typescript-eslint/no-explicit-any -- Need to build config dynamically
+    algorithms: jwtConfig.algorithms,
+    ignoreExpiration: jwtConfig.ignoreExpiration
+  };
+
+  // Only add optional properties if they're defined
+  if (jwtConfig.verificationSecret) {
+    verification.secret = jwtConfig.verificationSecret;
+  }
+  if (jwtConfig.verificationPublicKey) {
+    verification.publicKey = jwtConfig.verificationPublicKey;
+  }
+  if (jwtConfig.issuer) {
+    verification.issuer = jwtConfig.issuer;
+  }
+  if (jwtConfig.audience) {
+    verification.audience = jwtConfig.audience;
+  }
+
+  return {
+    verification
+  };
 }

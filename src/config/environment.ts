@@ -40,6 +40,28 @@ export const memoryConfigSchema = z.object({
   defaultImportance: z.number().min(0).max(1).default(0.5), // Default importance score
 });
 
+// JWT Configuration Schema (supports both static tokens and OAuth)
+export const jwtConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  type: z.enum(['static', 'oauth']).default('static'),
+  // Static JWT configuration
+  token: z.string().optional(), // Required for static type
+  // OAuth JWT configuration  
+  clientId: z.string().optional(), // Required for oauth type
+  clientSecret: z.string().optional(), // Required for oauth type
+  tokenEndpoint: z.string().url().optional(), // Required for oauth type
+  scope: z.string().optional(),
+  grantType: z.enum(['client_credentials', 'authorization_code']).default('client_credentials'),
+  refreshToken: z.string().optional(),
+  // JWT verification options (server-side)
+  verificationSecret: z.string().optional(),
+  verificationPublicKey: z.string().optional(),
+  algorithms: z.array(z.string()).default(['HS256']),
+  issuer: z.string().optional(),
+  audience: z.string().optional(),
+  ignoreExpiration: z.boolean().default(false),
+});
+
 // Dispatch Configuration Schema  
 export const dispatchConfigSchema = z.object({
   timeout: z.number().positive().default(30000), // 30 seconds - overall request timeout
@@ -56,6 +78,7 @@ export const configSchema = z.object({
   transport: transportConfigSchema,
   memory: memoryConfigSchema,
   dispatch: dispatchConfigSchema,
+  jwt: jwtConfigSchema,
 });
 
 /**
@@ -95,6 +118,26 @@ export function loadConfig() {
       sessionMaxIteration: parseInt(process.env['DISPATCH_SESSION_MAX_ITERATION'] || '10'),
       endpoint: process.env['DISPATCH_ENDPOINT'] || '/',
       agentPort: parseInt(process.env['AGENT_PORT'] || '3000'),
+    },
+    jwt: {
+      enabled: process.env['JWT_ENABLED'] === 'true',
+      type: (process.env['JWT_TYPE'] as 'static' | 'oauth') || 'static',
+      // Static JWT configuration
+      token: process.env['JWT_TOKEN'] || undefined,
+      // OAuth JWT configuration  
+      clientId: process.env['JWT_CLIENT_ID'] || undefined,
+      clientSecret: process.env['JWT_CLIENT_SECRET'] || undefined,
+      tokenEndpoint: process.env['JWT_TOKEN_ENDPOINT'] || undefined,
+      scope: process.env['JWT_SCOPE'] || undefined,
+      grantType: (process.env['JWT_GRANT_TYPE'] as 'client_credentials' | 'authorization_code') || 'client_credentials',
+      refreshToken: process.env['JWT_REFRESH_TOKEN'] || undefined,
+      // JWT verification options (server-side)
+      verificationSecret: process.env['JWT_VERIFICATION_SECRET'] || undefined,
+      verificationPublicKey: process.env['JWT_VERIFICATION_PUBLIC_KEY'] || undefined,
+      algorithms: process.env['JWT_ALGORITHMS']?.split(',').map(alg => alg.trim()) || ['HS256'],
+      issuer: process.env['JWT_ISSUER'] || undefined,
+      audience: process.env['JWT_AUDIENCE'] || undefined,
+      ignoreExpiration: process.env['JWT_IGNORE_EXPIRATION'] === 'true',
     }
   };
 
@@ -107,3 +150,4 @@ export type OpenAIConfig = z.infer<typeof openAIConfigSchema>;
 export type TransportConfig = z.infer<typeof transportConfigSchema>;
 export type MemoryConfig = z.infer<typeof memoryConfigSchema>;
 export type DispatchConfig = z.infer<typeof dispatchConfigSchema>;
+export type JWTConfig = z.infer<typeof jwtConfigSchema>;

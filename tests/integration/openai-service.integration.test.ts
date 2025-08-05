@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { OpenAIService } from '../../src/core/openai-service.js';
-import type { OpenAIConfig, DispatchConfig, TransportConfig, MemoryConfig } from '../../src/config/environment.js';
+import type { OpenAIConfig, DispatchConfig } from '../../src/config/environment.js';
 import type { AgentRequest, AgentClient } from '@cubicler/cubicagentkit';
 import OpenAI from 'openai';
 import { config } from 'dotenv';
@@ -14,8 +14,6 @@ describe('OpenAI Service Real API Integration', () => {
   let openAIService: OpenAIService;
   let realOpenAIConfig: OpenAIConfig;
   let mockDispatchConfig: DispatchConfig;
-  let mockTransportConfig: TransportConfig;
-  let mockMemoryConfig: MemoryConfig;
   let mockAgentClient: AgentClient;
   let realOpenAI: OpenAI;
 
@@ -80,22 +78,6 @@ describe('OpenAI Service Real API Integration', () => {
       sessionMaxIteration: 3, // Lower iteration limit for testing
       endpoint: '/',
       agentPort: 3000
-    };
-
-    mockTransportConfig = {
-      mode: 'http' as const,
-      cubiclerUrl: 'http://localhost:8080',
-      command: undefined,
-      args: [],
-      cwd: undefined
-    };
-
-    mockMemoryConfig = {
-      enabled: true,
-      type: 'memory' as const,
-      dbPath: './test-memories.db',
-      maxTokens: 1000,
-      defaultImportance: 0.5
     };
 
     // Create real OpenAI client for direct testing
@@ -351,7 +333,6 @@ describe('OpenAI Service Real API Integration', () => {
 
     it.skipIf(!REAL_OPENAI_API_KEY)('should enforce iteration limits in real scenarios', async () => {
       console.log('🧪 Testing iteration limits...');
-      const cubiclerUrl = 'http://localhost:8080';
       
       // Use very low iteration limit
       const limitedDispatchConfig = {

@@ -299,7 +299,7 @@ describe('InternalToolAggregator', () => {
           function: { name: 'strange_failing_tool', description: 'Strange tool', parameters: {} }
         }),
         execute: async () => {
-          // eslint-disable-next-line @typescript-eslint/only-throw-error -- Testing non-Error throws
+           
           throw 'Strange error type';
         }
       };

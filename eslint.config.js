@@ -20,14 +20,16 @@ export default [
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: './tsconfig.json'
+        project: './tsconfig.eslint.json'
       },
       globals: {
         console: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
         __dirname: 'readonly',
-        __filename: 'readonly'
+        __filename: 'readonly',
+        NodeJS: 'readonly',
+        performance: 'readonly'
       }
     },
     plugins: {

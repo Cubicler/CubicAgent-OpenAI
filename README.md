@@ -1,6 +1,6 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.1`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.3`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
@@ -8,6 +8,7 @@ CubicAgent-OpenAI is both a **deployable agent application** and a **reusable np
 
 - ✅ **NPM Package** - Available as `@cubicler/cubicagent-openai` with CLI and library exports
 - ✅ **Multiple transport modes** - HTTP and stdio communication support
+- ✅ **JWT Authentication** - Full OAuth and static token support for secure communications
 - ✅ **CubicAgent injection** - Can be used as internal agent within Cubicler
 - ✅ **Memory integration** - Optional sentence-based memory with SQLite or in-memory storage
 - ✅ **Lazy initialization** - Only connects to Cubicler on first dispatch request
@@ -478,7 +479,7 @@ tsconfig.json                        # TypeScript configuration
 - **OpenAIService**: Main service class handling OpenAI API integration and iterative function calling
 - **CubicAgent**: Core orchestrator from CubicAgentKit 2.3.1 with lazy initialization
 - **Message Helper**: Utilities for converting between Cubicler and OpenAI message formats
-- **Environment Configuration**: Zod-based validation for all 11 environment variables
+- **Environment Configuration**: Zod-based validation for all environment variables
 - **Lazy Initialization**: Automatic connection to Cubicler on first dispatch request
 
 ### Architecture Benefits
@@ -509,6 +510,36 @@ tsconfig.json                        # TypeScript configuration
 | `DISPATCH_SESSION_MAX_ITERATION` | No | `10` | Max iterations per conversation session |
 | `DISPATCH_ENDPOINT` | No | `/` | Agent endpoint path |
 | `AGENT_PORT` | No | `3000` | HTTP server port |
+
+#### JWT Authentication (New in 2.3.3)
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `JWT_ENABLED` | No | `false` | Enable JWT authentication |
+| `JWT_TYPE` | No | `static` | JWT type: `static` or `oauth` |
+| `JWT_TOKEN` | No | - | Static JWT token (required if type=static) |
+| `JWT_CLIENT_ID` | No | - | OAuth client ID (required if type=oauth) |
+| `JWT_CLIENT_SECRET` | No | - | OAuth client secret (required if type=oauth) |
+| `JWT_TOKEN_ENDPOINT` | No | - | OAuth token endpoint URL (required if type=oauth) |
+| `JWT_SCOPE` | No | - | OAuth scope (optional) |
+| `JWT_GRANT_TYPE` | No | `client_credentials` | OAuth grant type |
+| `JWT_REFRESH_TOKEN` | No | - | OAuth refresh token (optional) |
+| `JWT_VERIFICATION_SECRET` | No | - | JWT verification secret for server (optional) |
+| `JWT_VERIFICATION_PUBLIC_KEY` | No | - | JWT verification public key for server (optional) |
+| `JWT_ALGORITHMS` | No | `HS256` | JWT verification algorithms (comma-separated) |
+| `JWT_ISSUER` | No | - | JWT issuer validation (optional) |
+| `JWT_AUDIENCE` | No | - | JWT audience validation (optional) |
+| `JWT_IGNORE_EXPIRATION` | No | `false` | Ignore JWT expiration during verification |
+
+#### Memory Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `MEMORY_ENABLED` | No | `false` | Enable sentence-based memory system |
+| `MEMORY_TYPE` | No | `memory` | Memory storage: `memory` or `sqlite` |
+| `MEMORY_DB_PATH` | No | `./memories.db` | SQLite database path (if type=sqlite) |
+| `MEMORY_MAX_TOKENS` | No | `2000` | Short-term memory token limit |
+| `MEMORY_DEFAULT_IMPORTANCE` | No | `0.5` | Default importance score (0-1) |
 
 ### Error Handling
 

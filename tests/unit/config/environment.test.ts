@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { loadConfig, openAIConfigSchema, dispatchConfigSchema, configSchema } from '../../../src/config/environment.js';
+import { loadConfig, openAIConfigSchema, dispatchConfigSchema, configSchema, jwtConfigSchema } from '../../../src/config/environment.js';
 
 describe('Environment Configuration', () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -166,6 +166,54 @@ describe('Environment Configuration', () => {
     });
   });
 
+  describe('jwtConfigSchema', () => {
+    it('should validate JWT configuration with static type', () => {
+      const validConfig = {
+        enabled: true,
+        type: 'static' as const,
+        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        algorithms: ['HS256'],
+        ignoreExpiration: false,
+        grantType: 'client_credentials' as const
+      };
+      
+      const result = jwtConfigSchema.parse(validConfig);
+      expect(result.enabled).toBe(true);
+      expect(result.type).toBe('static');
+      expect(result.token).toBe('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...');
+    });
+
+    it('should validate JWT configuration with oauth type', () => {
+      const validConfig = {
+        enabled: true,
+        type: 'oauth' as const,
+        clientId: 'test-client-id',
+        clientSecret: 'test-client-secret',
+        tokenEndpoint: 'https://auth.example.com/token',
+        scope: 'read:data',
+        algorithms: ['RS256'],
+        grantType: 'client_credentials' as const,
+        ignoreExpiration: false
+      };
+      
+      const result = jwtConfigSchema.parse(validConfig);
+      expect(result.enabled).toBe(true);
+      expect(result.type).toBe('oauth');
+      expect(result.clientId).toBe('test-client-id');
+    });
+
+    it('should use defaults for optional JWT fields', () => {
+      const minimalConfig = {};
+      
+      const result = jwtConfigSchema.parse(minimalConfig);
+      expect(result.enabled).toBe(false);
+      expect(result.type).toBe('static');
+      expect(result.algorithms).toEqual(['HS256']);
+      expect(result.grantType).toBe('client_credentials');
+      expect(result.ignoreExpiration).toBe(false);
+    });
+  });
+
   describe('configSchema', () => {
     it('should validate complete configuration', () => {
       const validConfig = {
@@ -198,6 +246,13 @@ describe('Environment Configuration', () => {
           sessionMaxIteration: 15,
           endpoint: '/agent',
           agentPort: 4000
+        },
+        jwt: {
+          enabled: false,
+          type: 'static' as const,
+          algorithms: ['HS256'],
+          ignoreExpiration: false,
+          grantType: 'client_credentials' as const
         }
       };
 

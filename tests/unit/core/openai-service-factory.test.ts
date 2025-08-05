@@ -122,6 +122,15 @@ describe('OpenAI Service Factory', () => {
   let mockConsoleLog: ReturnType<typeof vi.spyOn>;
   let mockConsoleWarn: ReturnType<typeof vi.spyOn>;
 
+  // Helper function to create default JWT config for tests
+  const createDefaultJWTConfig = () => ({
+    enabled: false,
+    type: 'static' as const,
+    algorithms: ['HS256'],
+    ignoreExpiration: false,
+    grantType: 'client_credentials' as const
+  });
+
   beforeEach(() => {
     mockLoadConfig = vi.mocked(loadConfig);
     mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -155,7 +164,8 @@ describe('OpenAI Service Factory', () => {
         },
         memory: {
           enabled: false
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -190,7 +200,8 @@ describe('OpenAI Service Factory', () => {
           dbPath: './test.db',
           maxTokens: 2000,
           defaultImportance: 5
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -227,7 +238,8 @@ describe('OpenAI Service Factory', () => {
           type: 'in-memory',
           maxTokens: 1000,
           defaultImportance: 3
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -275,7 +287,8 @@ describe('OpenAI Service Factory', () => {
         },
         memory: {
           enabled: false
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -315,7 +328,8 @@ describe('OpenAI Service Factory', () => {
           dbPath: './test.db',
           maxTokens: 1000,
           defaultImportance: 5
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -328,7 +342,7 @@ describe('OpenAI Service Factory', () => {
 
     it('should handle unknown memory initialization errors', async () => {
       const mockCreateDefaultMemoryRepository = vi.mocked(createDefaultMemoryRepository);
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- Testing non-Error throws
+       
       mockCreateDefaultMemoryRepository.mockRejectedValue('String error');
 
       mockLoadConfig.mockReturnValue({
@@ -340,7 +354,8 @@ describe('OpenAI Service Factory', () => {
           type: 'in-memory',
           maxTokens: 1000,
           defaultImportance: 5
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -356,7 +371,8 @@ describe('OpenAI Service Factory', () => {
         openai: { apiKey: 'test' },
         dispatch: { agentPort: 3000, endpoint: '/agent' },
         transport: { mode: 'http', cubiclerUrl: 'http://localhost:3001' },
-        memory: { enabled: false }
+        memory: { enabled: false },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -385,7 +401,8 @@ describe('OpenAI Service Factory', () => {
           dbPath: './test.db',
           maxTokens: 1000,
           defaultImportance: 5
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
@@ -424,7 +441,8 @@ describe('OpenAI Service Factory', () => {
         },
         memory: {
           enabled: false
-        }
+        },
+        jwt: createDefaultJWTConfig()
       };
 
       mockLoadConfig.mockReturnValue(mockConfig);
@@ -468,7 +486,8 @@ describe('OpenAI Service Factory', () => {
           type: 'in-memory',
           maxTokens: 1000,
           defaultImportance: 5
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       await createOpenAIServiceFromEnv();
@@ -513,7 +532,8 @@ describe('OpenAI Service Factory', () => {
         },
         memory: { 
           enabled: false 
-        }
+        },
+        jwt: createDefaultJWTConfig()
       });
 
       const service = await createOpenAIServiceFromEnv();
