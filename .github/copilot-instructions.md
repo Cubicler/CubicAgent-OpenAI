@@ -80,8 +80,6 @@ Follow these steps for each interaction:
      - Basic Identity (age, gender, location, job title, education level, etc.)
      - Behaviors (interests, habits, etc.)
      - Preferences (communication style, preferred language, etc.)
-     - Goals (goals, targets, aspirations, etc.)
-     - Relationships (personal and professional relationships up to 3 degrees of separation)
      - Project (important!):
         - Current project details (name, description, status, etc.)
         - Architecture, design, and implementation details
