@@ -14,7 +14,10 @@ export type {
   MessageSender,
   JSONValue,
   JSONObject,
-  JSONArray
+  JSONArray,
+  MemoryRepository,
+  MemorySearchOptions,
+  AgentMemory
 } from '@cubicler/cubicagentkit';
 
 /**

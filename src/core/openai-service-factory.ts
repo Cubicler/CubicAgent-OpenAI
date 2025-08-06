@@ -13,6 +13,7 @@ import {
 } from '@cubicler/cubicagentkit';
 import { loadConfig, type TransportConfig, type DispatchConfig, type MemoryConfig, type JWTConfig } from '../config/environment.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
+import type { InternalTool } from '../internal-tools/internal-tool.interface.js';
 import { InternalToolAggregator } from './internal-tool-aggregator.js';
 import { OpenAIService } from './openai-service.js';
 
@@ -28,6 +29,8 @@ import { MemoryEditContentTool } from '../internal-tools/memory/memory-edit-cont
 import { MemoryAddTagTool } from '../internal-tools/memory/memory-add-tag-tool.js';
 import { MemoryRemoveTagTool } from '../internal-tools/memory/memory-remove-tag-tool.js';
 import { MemoryReplaceTagsTool } from '../internal-tools/memory/memory-replace-tags-tool.js';
+import { SummarizerInternalTool } from '../internal-tools/summarizer/summarizer-internal-tool.js';
+import { initializeShortTermMemoryOnFirstLoad } from '../utils/memory-init-helper.js';
 
 /**
  * Factory function to create OpenAIService from environment variables
@@ -39,7 +42,7 @@ export async function createOpenAIServiceFromEnv(): Promise<OpenAIService> {
   const memory = await initializeMemory(memoryConfig);
 
   // Create internal tool aggregator with memory tools if memory is available
-  const internalToolHandler = createInternalToolHandler(memory);
+  const internalToolHandler = createInternalToolHandler(memory, openaiConfig.apiKey, openaiConfig.summarizerModel);
 
   // Initialize client and CubicAgent based on transport mode
   const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
@@ -68,6 +71,10 @@ async function initializeMemory(memoryConfig: MemoryConfig): Promise<MemoryRepos
         );
     
     console.log(`💾 Memory enabled: ${memoryConfig.type} (${memoryConfig.maxTokens} tokens)`);
+    
+    // Initialize short-term memory with important memories on first load
+    await initializeShortTermMemoryOnFirstLoad(memory, memoryConfig.maxTokens);
+    
     return memory;
   } catch (error) {
     console.warn(`⚠️ Memory initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -78,12 +85,17 @@ async function initializeMemory(memoryConfig: MemoryConfig): Promise<MemoryRepos
 /**
  * Create internal tool handler with memory tools if memory is available
  */
-function createInternalToolHandler(memory: MemoryRepository | undefined): InternalToolHandling | undefined {
+function createInternalToolHandler(
+  memory: MemoryRepository | undefined, 
+  openaiApiKey?: string, 
+  summarizerModel?: string
+): InternalToolHandling | undefined {
   if (!memory) {
     return undefined;
   }
 
-  const memoryTools = [
+  // Create original memory tools
+  const originalMemoryTools = [
     new MemoryRememberTool(memory),
     new MemoryRecallTool(memory),
     new MemorySearchTool(memory),
@@ -96,10 +108,27 @@ function createInternalToolHandler(memory: MemoryRepository | undefined): Intern
     new MemoryRemoveTagTool(memory),
     new MemoryReplaceTagsTool(memory)
   ];
+
+  // Collect all tools (original + summarized versions)
+  const allTools: InternalTool[] = [...originalMemoryTools];
+
+  // Create summarized versions for specific memory tools if summarization is enabled
+  const enableSummarization = Boolean(openaiApiKey && summarizerModel);
+  if (enableSummarization && summarizerModel && openaiApiKey) {
+    // Create summarized versions for memory tools that benefit from summarization
+    const summarizedTools = [
+      new SummarizerInternalTool(new MemoryRecallTool(memory), summarizerModel, openaiApiKey),
+      new SummarizerInternalTool(new MemorySearchTool(memory), summarizerModel, openaiApiKey),
+      new SummarizerInternalTool(new MemoryGetShortTermTool(memory), summarizerModel, openaiApiKey)
+    ];
+
+    allTools.push(...summarizedTools);
+    console.log(`🔧 Internal tools enabled: ${originalMemoryTools.length} memory tools + ${summarizedTools.length} summarized versions`);
+  } else {
+    console.log(`🔧 Internal tools enabled: ${originalMemoryTools.length} memory tools`);
+  }
   
-  const handler = new InternalToolAggregator(memoryTools);
-  console.log(`🔧 Internal tools enabled: ${memoryTools.length} memory tools`);
-  return handler;
+  return new InternalToolAggregator(allTools);
 }
 
 /**
