@@ -8,6 +8,7 @@ export interface InternalToolResult {
   success: boolean;
   message?: string;
   error?: string;
+  tokensUsed?: number;
   [key: string]: unknown;
 }
 

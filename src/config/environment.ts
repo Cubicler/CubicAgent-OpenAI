@@ -10,7 +10,23 @@ import 'dotenv/config';
 // OpenAI Configuration Schema
 export const openAIConfigSchema = z.object({
   apiKey: z.string().min(1, 'OpenAI API key is required'),
-  model: z.enum(['gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo']).default('gpt-4o'),
+  model: z.enum([
+    // GPT-4o models
+    'gpt-4o',
+    'gpt-4o-mini',
+    // GPT-4 models
+    'gpt-4',
+    'gpt-4-turbo',
+    'gpt-4-turbo-preview',
+    'gpt-4-0125-preview',
+    'gpt-4-1106-preview',
+    'gpt-4-vision-preview',
+    // GPT-3.5 models
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0125',
+    'gpt-3.5-turbo-1106',
+    'gpt-3.5-turbo-16k'
+  ]).default('gpt-4o'),
   temperature: z.number().min(0).max(2).default(0.7),
   sessionMaxTokens: z.number().positive().default(4096),
   organization: z.string().optional(),
@@ -18,6 +34,23 @@ export const openAIConfigSchema = z.object({
   baseURL: z.string().url().optional(),
   timeout: z.number().positive().default(600000), // 10 minutes (OpenAI default)
   maxRetries: z.number().min(0).default(2), // OpenAI default
+  summarizerModel: z.enum([
+    // GPT-4o models
+    'gpt-4o',
+    'gpt-4o-mini',
+    // GPT-4 models
+    'gpt-4',
+    'gpt-4-turbo',
+    'gpt-4-turbo-preview',
+    'gpt-4-0125-preview',
+    'gpt-4-1106-preview',
+    'gpt-4-vision-preview',
+    // GPT-3.5 models
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0125',
+    'gpt-3.5-turbo-1106',
+    'gpt-3.5-turbo-16k'
+  ]).optional(),
 });
 
 // Transport Configuration Schema
@@ -99,6 +132,7 @@ export function loadConfig() {
       baseURL: process.env['OPENAI_BASE_URL'] || undefined,
       timeout: parseInt(process.env['OPENAI_TIMEOUT'] || '600000'), // 10 minutes
       maxRetries: parseInt(process.env['OPENAI_MAX_RETRIES'] || '2'),
+      summarizerModel: process.env['OPENAI_SUMMARIZER_MODEL'] || undefined,
     },
     transport: {
       mode: (process.env['TRANSPORT_MODE'] as 'http' | 'stdio' | 'sse') || 'http',

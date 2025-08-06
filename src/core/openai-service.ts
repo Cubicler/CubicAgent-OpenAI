@@ -6,6 +6,8 @@ import type { ChatCompletionMessageParam, ChatCompletionTool, ChatCompletionMess
 import type { OpenAIRequestParams, OpenAIResponse, ToolExecutionResult, ProcessToolCallsResult, SessionState } from '../models/types.js';
 import { buildOpenAIMessages, buildSystemMessage, cleanFinalResponse } from '../utils/message-helper.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
+import { InternalToolAggregator } from './internal-tool-aggregator.js';
+import { createSummarizerTools } from '../internal-tools/summarizer/summarizer-tool.js';
 
 /**
  * OpenAIService
@@ -412,7 +414,7 @@ export class OpenAIService {
       const toolResult = await this.executeSingleToolCall(toolCall, client);
       
       // Handle special server tools fetching
-      updatedTools = this.handleServerToolsFetch(toolCall.function.name, toolResult.result, updatedTools);
+      updatedTools = this.handleServerToolsFetch(toolCall.function.name, toolResult.result, updatedTools, client);
       
       // Add tool result message
       toolMessages.push({
@@ -495,11 +497,13 @@ export class OpenAIService {
 
   /**
    * Handle special server tools fetching with early return pattern
+   * Also creates and adds summarizer tools if summarizer is configured
    */
   private handleServerToolsFetch(
     functionName: string,
     result: unknown,
-    currentTools: ChatCompletionTool[]
+    currentTools: ChatCompletionTool[],
+    client: AgentClient
   ): ChatCompletionTool[] {
     // Early return if not the server tools function
     if (functionName !== 'cubicler_fetch_server_tools') {
@@ -521,6 +525,30 @@ export class OpenAIService {
     // Convert new tools to OpenAI format and add them
     const newOpenAITools = this.buildOpenAITools(serverToolsResponse.tools);
     console.log(`➕ Added ${newOpenAITools.length} server tools`);
+    
+    // Add summarizer tools if configured and internalToolHandler exists
+    if (this.openaiConfig.summarizerModel && this.internalToolHandler) {
+      try {
+        const summarizerTools = createSummarizerTools(
+          serverToolsResponse.tools,
+          this.openaiConfig.summarizerModel,
+          this.openaiConfig.apiKey,
+          client
+        );
+        
+        // Cast to InternalToolAggregator to access addTool method
+        const aggregator = this.internalToolHandler as InternalToolAggregator;
+        
+        // Add each summarizer tool to the internal tool aggregator
+        for (const summarizerTool of summarizerTools) {
+          aggregator.addTool(summarizerTool);
+        }
+        
+        console.log(`🤖 Added ${summarizerTools.length} summarizer tools for newly fetched server tools`);
+      } catch (error) {
+        console.error('❌ Failed to create summarizer tools:', error);
+      }
+    }
     
     return [...currentTools, ...newOpenAITools];
   }

@@ -154,6 +154,31 @@ When responding, always provide your final response as plain text (not JSON). On
   if (request.tools.length > 0) {
     const remainingIterations = dispatchConfig.sessionMaxIteration - iteration;
     systemMessage += `\nYou have ${remainingIterations} remaining iterations to make tool calls if needed.`;
+    
+    // Check if summarizer tools are available (check for tools starting with 'summarize_')
+    const summarizerTools = request.tools.filter(tool => tool.name.startsWith('summarize_'));
+    if (summarizerTools.length > 0) {
+      systemMessage += `\n\n## Summarizer Tools Available\nYou have access to ${summarizerTools.length} summarizer tools that can execute other tools and provide AI-powered summaries of their results.
+
+**Available Summarizer Tools:**\n`;
+      
+      for (const tool of summarizerTools) {
+        const originalToolName = tool.name.replace('summarize_', '');
+        systemMessage += `- **${tool.name}**: Execute ${originalToolName} and summarize results based on your prompt\n`;
+      }
+      
+      systemMessage += `\n**How to use summarizer tools:**
+- Include a "_prompt" parameter with specific instructions for summarization
+- Example: "Focus on errors only", "Highlight key metrics", "Extract main findings"
+- All other parameters are passed directly to the original tool
+- The summarizer will execute the tool and provide a focused, relevant summary
+
+**When to use summarizers:**
+- When you need a focused view of tool results
+- To extract specific information from large datasets
+- To get insights tailored to the user's current question
+- To reduce information overload from verbose tool outputs`;
+    }
   }
 
   return systemMessage;

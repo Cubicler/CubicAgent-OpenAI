@@ -392,7 +392,174 @@ interface Message {
 
 The agent returns the final OpenAI response after processing any tool calls within the session iteration limit.
 
-## 🧪 Testing
+## � Summarizer Tools (New)
+
+CubicAgent-OpenAI includes an optional **AI-powered summarizer feature** that automatically creates summarizer variants of all available MCP tools. This allows you to get focused, intelligent summaries of tool results tailored to your specific needs.
+
+### How It Works
+
+When enabled, the summarizer feature:
+
+1. **Automatically wraps MCP tools** - Creates `summarize_toolName` variants for each discovered tool
+2. **Dynamic registration** - Summarizer tools are added when new MCP tools are fetched
+3. **AI-powered analysis** - Uses a dedicated OpenAI model to generate focused summaries
+4. **Parameter passthrough** - All original tool parameters work exactly the same
+5. **Custom prompting** - Uses `_prompt` parameter for summarization instructions
+
+### Summarizer Configuration
+
+Add the following environment variable to enable summarizer tools:
+
+```env
+# Enable summarizer feature with dedicated model
+OPENAI_SUMMARIZER_MODEL=gpt-4o-mini
+```
+
+**Benefits of using `gpt-4o-mini` for summarization:**
+
+- ✅ **Cost-effective** - Lower cost per token than main models
+- ✅ **Fast** - Optimized for quick processing
+- ✅ **Focused** - Perfect for analysis and summarization tasks
+- ✅ **Separate quota** - Doesn't consume main model tokens
+
+### Usage Examples
+
+#### Basic Summarization
+
+```json
+{
+  "name": "summarize_getLogs",
+  "arguments": {
+    "_prompt": "Focus on errors only",
+    "userId": 123,
+    "timeRange": "24h"
+  }
+}
+```
+
+This will:
+
+1. Execute `getLogs` with `userId: 123` and `timeRange: "24h"`
+2. Pass the results to `gpt-4o-mini` with the prompt "Focus on errors only"
+3. Return both the original results and the AI-generated summary
+
+#### Advanced Summarization
+
+```json
+{
+  "name": "summarize_searchDocuments",
+  "arguments": {
+    "_prompt": "Extract the 3 most relevant findings and highlight any security concerns",
+    "query": "authentication vulnerabilities",
+    "limit": 50,
+    "includeMetadata": true
+  }
+}
+```
+
+#### Common Summarization Prompts
+
+```json
+// Focus on specific aspects
+"_prompt": "Highlight any errors or warnings"
+"_prompt": "Extract key metrics and performance indicators"
+"_prompt": "Summarize main findings in bullet points"
+"_prompt": "Focus on recent changes or updates"
+
+// Analysis and insights
+"_prompt": "Identify patterns and trends in the data"
+"_prompt": "Highlight anomalies or unexpected results"
+"_prompt": "Extract actionable items and recommendations"
+"_prompt": "Compare current vs expected values"
+
+// Format-specific requests
+"_prompt": "Provide a technical summary for developers"
+"_prompt": "Create an executive summary for stakeholders"
+"_prompt": "List the top 5 most important items"
+"_prompt": "Explain the results in simple terms"
+```
+
+### Tool Response Format
+
+Summarizer tools return enhanced responses with token usage tracking:
+
+```typescript
+{
+  success: true,
+  message: "Tool executed and summarized successfully",
+  originalTool: "getLogs",           // Original tool name
+  originalResult: { /* raw data */ }, // Complete original results
+  summary: "AI-generated summary...", // Focused summary based on _prompt
+  tokensUsed: 45                     // Tokens consumed by summarization
+}
+```
+
+**Token Usage Benefits:**
+
+- 📊 **Cost tracking** - Monitor summarization costs separately from main model
+- 📈 **Usage analytics** - Track which tools generate the most summarization overhead
+- 💰 **Budget control** - Set limits and alerts based on summarization token usage
+- 🔍 **Optimization insights** - Identify opportunities to improve prompt efficiency
+
+### Automatic Documentation
+
+When summarizer tools are available, they're automatically documented in the system prompt:
+
+```text
+## Summarizer Tools Available
+You have access to 5 summarizer tools that can execute other tools and provide AI-powered summaries of their results.
+
+**Available Summarizer Tools:**
+- summarize_getLogs: Execute getLogs and summarize results based on your prompt
+- summarize_fetchUser: Execute fetchUser and summarize results based on your prompt
+- summarize_searchDocs: Execute searchDocs and summarize results based on your prompt
+
+**How to use summarizer tools:**
+- Include a "_prompt" parameter with specific instructions for summarization
+- Example: "Focus on errors only", "Highlight key metrics", "Extract main findings"
+- All other parameters are passed directly to the original tool
+- The summarizer will execute the tool and provide a focused, relevant summary
+
+**When to use summarizers:**
+- When you need a focused view of tool results
+- To extract specific information from large datasets
+- To get insights tailored to the user's current question
+- To reduce information overload from verbose tool outputs
+```
+
+### Benefits
+
+✅ **Intelligent filtering** - Extract only relevant information from large datasets  
+✅ **Cost-effective** - Use cheaper models for summarization while keeping premium models for reasoning  
+✅ **Contextual insights** - Get summaries tailored to your specific questions  
+✅ **Reduced cognitive load** - Process large tool outputs more efficiently  
+✅ **Custom perspectives** - Same data, different viewpoints based on prompts  
+✅ **Automatic integration** - No manual configuration needed, works with any MCP tool  
+
+### Parameter Safety
+
+The `_prompt` parameter uses an underscore prefix to prevent collisions with real tool parameters:
+
+- ✅ **Collision-safe** - `_prompt` is very unlikely to conflict with existing parameters
+- ✅ **OpenAI compatible** - Underscore-prefixed parameters are fully supported
+- ✅ **Clear indication** - Underscore prefix clearly marks internal parameters
+- ✅ **JSON Schema compliant** - Follows standard parameter naming conventions
+
+### Architecture
+
+```text
+User Request → summarize_toolName(params + _prompt)
+                        ↓
+            Execute original tool with params
+                        ↓
+               Get raw tool results
+                        ↓
+          Send to OPENAI_SUMMARIZER_MODEL with _prompt
+                        ↓
+        Return both original results + AI summary
+```
+
+This approach ensures you always have access to both the complete data and the focused insights you need.
 
 The project uses **Vitest** as the testing framework with comprehensive test coverage.
 
@@ -529,6 +696,7 @@ tsconfig.json                        # TypeScript configuration
 | `OPENAI_BASE_URL` | No | - | Custom API base URL (optional) |
 | `OPENAI_TIMEOUT` | No | `600000` | API timeout in milliseconds |
 | `OPENAI_MAX_RETRIES` | No | `2` | Max retry attempts for OpenAI API |
+| `OPENAI_SUMMARIZER_MODEL` | No | - | Model for AI-powered summarization (enables summarizer tools) |
 | `DISPATCH_TIMEOUT` | No | `30000` | Overall request timeout (ms) |
 | `MCP_MAX_RETRIES` | No | `3` | Max retry attempts for MCP communication |
 | `MCP_CALL_TIMEOUT` | No | `10000` | Individual MCP call timeout (ms) |
