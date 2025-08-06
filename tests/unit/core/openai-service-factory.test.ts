@@ -5,7 +5,6 @@ import { loadConfig } from '../../../src/config/environment.js';
 import { 
   createDefaultMemoryRepository,
   createSQLiteMemoryRepository,
-  AxiosAgentClient,
   StdioAgentClient
 } from '@cubicler/cubicagentkit';
 import { InternalToolAggregator } from '../../../src/core/internal-tool-aggregator.js';
@@ -19,8 +18,20 @@ vi.mock('@cubicler/cubicagentkit', () => ({
     start: vi.fn(),
     stop: vi.fn()
   })),
-  AxiosAgentClient: vi.fn().mockImplementation((url, timeout) => ({ url, timeout })),
-  ExpressAgentServer: vi.fn().mockImplementation((port, endpoint) => ({ port, endpoint })),
+  HttpAgentClient: vi.fn().mockImplementation((url, timeout) => ({ 
+    url, 
+    timeout,
+    useJWTAuth: vi.fn()
+  })),
+  HttpAgentServer: vi.fn().mockImplementation((port, endpoint) => ({ 
+    port, 
+    endpoint,
+    useJWTAuth: vi.fn()
+  })),
+  SSEAgentServer: vi.fn().mockImplementation((url, agentId) => ({ 
+    url, 
+    agentId
+  })),
   StdioAgentClient: vi.fn().mockImplementation((command, args, cwd) => ({ command, args, cwd })),
   StdioAgentServer: vi.fn().mockImplementation(() => ({})),
   createDefaultMemoryRepository: vi.fn().mockResolvedValue({ type: 'in-memory', maxTokens: 1000 }),
@@ -309,6 +320,69 @@ describe('OpenAI Service Factory', () => {
 
       await expect(createOpenAIServiceFromEnv()).rejects.toThrow(
         'STDIO_COMMAND is required for stdio transport mode'
+      );
+    });
+  });
+
+  describe('SSE Transport Mode', () => {
+    it('should create OpenAI service with SSE transport', async () => {
+      mockLoadConfig.mockReturnValue({
+        openai: {
+          apiKey: 'test-api-key',
+          model: 'gpt-4',
+          temperature: 0.7,
+          sessionMaxTokens: 4096
+        },
+        dispatch: {
+          sessionMaxIteration: 10,
+          mcpCallTimeout: 5000,
+          agentPort: 3000,
+          endpoint: '/agent'
+        },
+        transport: {
+          mode: 'sse',
+          sseUrl: 'http://localhost:8080',
+          agentId: 'my-test-agent-id'
+        },
+        memory: {
+          enabled: false
+        },
+        jwt: createDefaultJWTConfig()
+      });
+
+      const service = await createOpenAIServiceFromEnv();
+
+      expect(service).toBeInstanceOf(OpenAIService);
+      expect(mockConsoleLog).toHaveBeenCalledWith(
+        '⚡ OpenAI ready - sse transport - SSE connected to http://localhost:8080'
+      );
+    });
+
+    it('should throw error when SSE_URL is missing for SSE mode', async () => {
+      mockLoadConfig.mockReturnValue({
+        openai: { apiKey: 'test' },
+        dispatch: {},
+        transport: { mode: 'sse', agentId: 'test-agent' }, // Missing sseUrl
+        memory: { enabled: false },
+        jwt: createDefaultJWTConfig()
+      });
+
+      await expect(createOpenAIServiceFromEnv()).rejects.toThrow(
+        'SSE_URL is required for SSE transport mode'
+      );
+    });
+
+    it('should throw error when SSE_AGENT_ID is missing for SSE mode', async () => {
+      mockLoadConfig.mockReturnValue({
+        openai: { apiKey: 'test' },
+        dispatch: {},
+        transport: { mode: 'sse', sseUrl: 'http://localhost:8080' }, // Missing agentId
+        memory: { enabled: false },
+        jwt: createDefaultJWTConfig()
+      });
+
+      await expect(createOpenAIServiceFromEnv()).rejects.toThrow(
+        'SSE_AGENT_ID is required for SSE transport mode'
       );
     });
   });

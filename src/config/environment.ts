@@ -22,9 +22,12 @@ export const openAIConfigSchema = z.object({
 
 // Transport Configuration Schema
 export const transportConfigSchema = z.object({
-  mode: z.enum(['http', 'stdio']).default('http'),
+  mode: z.enum(['http', 'stdio', 'sse']).default('http'),
   // HTTP-specific options
   cubiclerUrl: z.string().url().optional(), // Required for HTTP mode
+  // SSE-specific options
+  sseUrl: z.string().url().optional(), // Required for SSE mode (e.g., 'http://localhost:8080')
+  agentId: z.string().optional(), // Required for SSE mode (unique agent identifier)
   // Stdio-specific options  
   command: z.string().optional(), // Required for stdio mode (e.g., 'npx', 'cubicler')
   args: z.array(z.string()).default([]), // Args for stdio command
@@ -98,8 +101,10 @@ export function loadConfig() {
       maxRetries: parseInt(process.env['OPENAI_MAX_RETRIES'] || '2'),
     },
     transport: {
-      mode: (process.env['TRANSPORT_MODE'] as 'http' | 'stdio') || 'http',
+      mode: (process.env['TRANSPORT_MODE'] as 'http' | 'stdio' | 'sse') || 'http',
       cubiclerUrl: process.env['CUBICLER_URL'] || undefined,
+      sseUrl: process.env['SSE_URL'] || undefined,
+      agentId: process.env['SSE_AGENT_ID'] || undefined,
       command: process.env['STDIO_COMMAND'] || undefined,
       args: process.env['STDIO_ARGS']?.split(',').map(arg => arg.trim()) || [],
       cwd: process.env['STDIO_CWD'] || undefined,

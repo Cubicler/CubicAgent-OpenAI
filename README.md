@@ -1,13 +1,13 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.3`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.4`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
 CubicAgent-OpenAI is both a **deployable agent application** and a **reusable npm library** that:
 
 - ✅ **NPM Package** - Available as `@cubicler/cubicagent-openai` with CLI and library exports
-- ✅ **Multiple transport modes** - HTTP and stdio communication support
+- ✅ **Multiple transport modes** - HTTP, SSE (Server-Sent Events), and stdio communication support
 - ✅ **JWT Authentication** - Full OAuth and static token support for secure communications
 - ✅ **CubicAgent injection** - Can be used as internal agent within Cubicler
 - ✅ **Memory integration** - Optional sentence-based memory with SQLite or in-memory storage
@@ -80,6 +80,9 @@ OPENAI_SESSION_MAX_TOKENS=4096
 TRANSPORT_MODE=http
 # For HTTP transport (default):
 CUBICLER_URL=http://localhost:8080
+# For SSE transport (real-time):
+# SSE_URL=http://localhost:8080
+# SSE_AGENT_ID=my-unique-agent-id
 # For stdio transport:
 # STDIO_COMMAND=npx
 # STDIO_ARGS=cubicler,--server
@@ -162,12 +165,12 @@ await service.start();
 #### Direct Service Construction (Advanced)
 
 ```typescript
-import { CubicAgent, AxiosAgentClient, ExpressAgentServer } from '@cubicler/cubicagentkit';
+import { CubicAgent, HttpAgentClient, HttpAgentServer } from '@cubicler/cubicagentkit';
 import { OpenAIService } from '@cubicler/cubicagent-openai';
 
 // Create CubicAgent with HTTP transport
-const client = new AxiosAgentClient('http://localhost:8080');
-const server = new ExpressAgentServer(3000);
+const client = new HttpAgentClient('http://localhost:8080');
+const server = new HttpAgentServer(3000);
 const cubicAgent = new CubicAgent(client, server);
 
 // Create OpenAI configuration
@@ -188,6 +191,22 @@ const dispatchConfig = {
 };
 
 // Initialize service
+const service = new OpenAIService(cubicAgent, openaiConfig, dispatchConfig);
+await service.start();
+```
+
+#### SSE Transport (Real-time)
+
+```typescript
+import { CubicAgent, HttpAgentClient, SSEAgentServer } from '@cubicler/cubicagentkit';
+import { OpenAIService } from '@cubicler/cubicagent-openai';
+
+// Create CubicAgent with SSE transport for real-time communication
+const client = new HttpAgentClient('http://localhost:8080');
+const server = new SSEAgentServer('http://localhost:8080', 'my-agent-id');
+const cubicAgent = new CubicAgent(client, server);
+
+// Initialize service with SSE
 const service = new OpenAIService(cubicAgent, openaiConfig, dispatchConfig);
 await service.start();
 ```
@@ -494,8 +513,14 @@ tsconfig.json                        # TypeScript configuration
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `CUBICLER_URL` | **Yes** | - | Cubicler instance URL for MCP communication |
 | `OPENAI_API_KEY` | **Yes** | - | OpenAI API key |
+| `TRANSPORT_MODE` | No | `http` | Transport mode: `http`, `sse`, or `stdio` |
+| `CUBICLER_URL` | **Yes*** | - | Cubicler instance URL for HTTP/MCP communication |
+| `SSE_URL` | **Yes*** | - | SSE server URL for real-time communication (SSE mode only) |
+| `SSE_AGENT_ID` | **Yes*** | - | Unique agent identifier for SSE connection (SSE mode only) |
+| `STDIO_COMMAND` | **Yes*** | - | Command for stdio transport (stdio mode only) |
+| `STDIO_ARGS` | No | - | Arguments for stdio command (stdio mode only) |
+| `STDIO_CWD` | No | - | Working directory for stdio process (optional) |
 | `OPENAI_MODEL` | No | `gpt-4o` | OpenAI model: gpt-4o, gpt-4, gpt-4-turbo, gpt-3.5-turbo |
 | `OPENAI_TEMPERATURE` | No | `0.7` | Response creativity (0.0-2.0) |
 | `OPENAI_SESSION_MAX_TOKENS` | No | `4096` | Maximum tokens per session/response |
@@ -508,8 +533,10 @@ tsconfig.json                        # TypeScript configuration
 | `MCP_MAX_RETRIES` | No | `3` | Max retry attempts for MCP communication |
 | `MCP_CALL_TIMEOUT` | No | `10000` | Individual MCP call timeout (ms) |
 | `DISPATCH_SESSION_MAX_ITERATION` | No | `10` | Max iterations per conversation session |
-| `DISPATCH_ENDPOINT` | No | `/` | Agent endpoint path |
-| `AGENT_PORT` | No | `3000` | HTTP server port |
+| `DISPATCH_ENDPOINT` | No | `/` | Agent endpoint path (HTTP mode only) |
+| `AGENT_PORT` | No | `3000` | HTTP server port (HTTP mode only) |
+
+*Required based on transport mode: `CUBICLER_URL` for HTTP, `SSE_URL` and `SSE_AGENT_ID` for SSE, `STDIO_COMMAND` for stdio.
 
 #### JWT Authentication (New in 2.3.3)
 

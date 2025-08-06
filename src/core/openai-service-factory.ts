@@ -1,9 +1,10 @@
 import { 
   CubicAgent, 
-  AxiosAgentClient, 
-  ExpressAgentServer, 
+  HttpAgentClient, 
+  HttpAgentServer, 
   StdioAgentClient, 
   StdioAgentServer,
+  SSEAgentServer,
   createDefaultMemoryRepository,
   createSQLiteMemoryRepository,
   type MemoryRepository,
@@ -112,6 +113,8 @@ async function createCubicAgent(
 ): Promise<CubicAgent> {
   if (transportConfig.mode === 'stdio') {
     return createStdioCubicAgent(transportConfig, memory);
+  } else if (transportConfig.mode === 'sse') {
+    return createSSECubicAgent(transportConfig, jwtConfig, memory);
   } else {
     return createHttpCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
   }
@@ -155,7 +158,7 @@ function createHttpCubicAgent(
   }
 
   // Create client with optional JWT authentication
-  const client = new AxiosAgentClient(transportConfig.cubiclerUrl, dispatchConfig.mcpCallTimeout);
+  const client = new HttpAgentClient(transportConfig.cubiclerUrl, dispatchConfig.mcpCallTimeout);
   
   // Configure JWT auth for client if enabled
   if (jwtConfig.enabled) {
@@ -167,7 +170,7 @@ function createHttpCubicAgent(
   }
 
   // Create server with optional JWT middleware
-  const server = new ExpressAgentServer(dispatchConfig.agentPort, dispatchConfig.endpoint);
+  const server = new HttpAgentServer(dispatchConfig.agentPort, dispatchConfig.endpoint);
   
   // Configure JWT middleware for server if enabled
   if (jwtConfig.enabled && (jwtConfig.verificationSecret || jwtConfig.verificationPublicKey)) {
@@ -181,6 +184,44 @@ function createHttpCubicAgent(
   const cubicAgent = new CubicAgent(client, server, memory);
   
   console.log(`🚀 OpenAI ready - ${transportConfig.mode} transport - ${dispatchConfig.agentPort}`);
+  
+  return cubicAgent;
+}
+
+/**
+ * Create CubicAgent for SSE transport mode
+ */
+function createSSECubicAgent(
+  transportConfig: TransportConfig,
+  jwtConfig: JWTConfig,
+  memory: MemoryRepository | undefined
+): CubicAgent {
+  if (!transportConfig.sseUrl) {
+    throw new Error('SSE_URL is required for SSE transport mode');
+  }
+  
+  if (!transportConfig.agentId) {
+    throw new Error('SSE_AGENT_ID is required for SSE transport mode');
+  }
+
+  // Create client with optional JWT authentication
+  const client = new HttpAgentClient(transportConfig.sseUrl);
+  
+  // Configure JWT auth for client if enabled
+  if (jwtConfig.enabled) {
+    const authConfig = createJWTAuthConfig(jwtConfig);
+    if (authConfig) {
+      client.useJWTAuth(authConfig);
+      console.log(`🔐 JWT auth enabled for SSE client: ${jwtConfig.type}`);
+    }
+  }
+
+  // Create SSE server
+  const server = new SSEAgentServer(transportConfig.sseUrl, transportConfig.agentId);
+  
+  const cubicAgent = new CubicAgent(client, server, memory);
+  
+  console.log(`⚡ OpenAI ready - ${transportConfig.mode} transport - SSE connected to ${transportConfig.sseUrl}`);
   
   return cubicAgent;
 }
