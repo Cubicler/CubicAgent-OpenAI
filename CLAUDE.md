@@ -1,81 +1,54 @@
-# CubicAgent-OpenAI Development Guide
+# Repository Guidelines
 
-OpenAI agent application + npm library integrating GPT models with Cubicler 2.3.0 via CubicAgentKit 2.3.1.
+## Project Structure & Module Organization
 
-## Core Architecture
+- Source: `src/` (core logic in `src/core/`, config in `src/config/`, internal tools in `src/internal-tools/`, helpers in `src/utils/`, types in `src/models/`).
+- Entry point: `src/index.ts` → compiled to `dist/index.js`.
+- Tests: `tests/unit/` and `tests/integration/` with setup in `tests/setup.ts`.
+- Build output: `dist/` (ignored by lint/tests).
 
-**Stack:** CubicAgentKit 2.3.1 + OpenAI + Memory Integration
+## Build, Test, and Development Commands
 
-- CubicAgent: Main orchestrator (lazy init)
-- OpenAI Service: Iterative function calling
-- Memory: SQLite/in-memory with 10 agent tools
-- Transport: HTTP/stdio modes
+- `npm run dev`: Start TypeScript in watch mode via `tsx`.
+- `npm run build`: Type-check and compile to `dist/` using `tsc`.
+- `npm start`: Run compiled app (`dist/index.js`). Also the CLI bin `cubicagent-openai` points here.
+- `npm test`: Run all tests with Vitest. Variants: `test:unit`, `test:integration`, `test:watch`.
+- `npm run test:coverage`: Generate coverage (text, lcov, html).
+- `npm run lint` / `lint:fix`: Check/fix lint issues in `src/**/*.ts`.
+- Docker: see `DOCKER.md` and `docker-compose.yml` for containerized runs.
 
-## Environment Variables (16 total)
+## Coding Style & Naming Conventions
 
-**Required:** `OPENAI_API_KEY`
+- Language: TypeScript (ES2022, strict mode on). Path alias: `@/*` → `src/*`.
+- Linting: ESLint with `@typescript-eslint` (see `eslint.config.js`). No unused vars, prefer `const`, no `var`.
+- Files: kebab-case for filenames (e.g., `openai-service.ts`), `.interface.ts` for interfaces.
+- Indentation & formatting: follow ESLint autofix; keep imports ordered logically.
+- Public APIs: export explicit types from `src/models` and `src/config` where relevant.
 
-**Key Config:**
+## Testing Guidelines
 
-- `TRANSPORT_MODE` (http/stdio), `CUBICLER_URL`
-- `OPENAI_MODEL` (gpt-4o default), `OPENAI_TEMPERATURE` (0.7)
-- `DISPATCH_SESSION_MAX_ITERATION` (10), `AGENT_PORT` (3000)
-- `MEMORY_ENABLED` (false), `MEMORY_TYPE` (memory/sqlite)
+- Framework: Vitest (`vitest.config.ts`). Test files: `tests/**/*.{test,spec}.ts`.
+- Structure: mirror source folders under `tests/unit` and `tests/integration`.
+- Conventions: name tests after target module (e.g., `openai-service.test.ts`). Keep deterministic, use `tests/setup.ts` for globals.
+- Coverage: run `npm run test:coverage`; include `src/**/*.ts` only.
 
-## Core Services
+## Commit & Pull Request Guidelines
 
-**OpenAIService** (`src/core/openai-service.ts`):
+- Commits: use Conventional Commits when possible (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`). Keep messages imperative and scoped.
+- PRs: include clear description, rationale, and screenshots/log excerpts if behavior changes. Link issues, list notable env/config changes, and update `README.md`/`.env.example` as needed.
+- Quality gate: PRs should pass lint, tests, and include tests for new logic.
 
-- `executeIterativeLoop()`: Session loop with iteration limits
-- `buildOpenAITools()`: Convert Cubicler→OpenAI function schemas
-- `executeToolCalls()`: Execute MCP/internal tools
-- Stops when no tool calls returned
+## Security & Configuration Tips
 
-**MessageHelper** (`src/utils/message-helper.ts`):
+- Use `.env` (see `.env.example`). Do not commit secrets. Required: `OPENAI_API_KEY`; set transport via `TRANSPORT_MODE` (`http`|`stdio`|`sse`) and related vars (e.g., `CUBICLER_URL`, `SSE_URL`).
+- Validate config with `loadConfig()` (`src/config/environment.ts`); prefer updating schemas when adding vars.
 
-- `buildOpenAIMessages()`: Cubicler→OpenAI format
-- `buildSystemMessage()`: System prompt + memory context
-- `cleanFinalResponse()`: Extract final content
+## Engineering Principles
 
-**InternalToolAggregator** (`src/core/internal-tool-aggregator.ts`):
-
-- Routes internal memory tools vs external MCP tools
-
-## Session Flow
-
-1. Initialize iteration counter
-2. Get tools (CubicAgent.getTools() + memory tools)  
-3. OpenAI request with functions
-4. Execute tool calls if requested
-5. Check iteration limit → continue or return
-6. Log metrics
-
-## Memory Tools (10 available)
-
-`agentmemory_remember|search|recall|get_short_term|forget|edit_content|edit_importance|add_tag|remove_tag|replace_tags`
-
-Implementation in `src/internal-tools/memory/` extending `BaseMemoryTool`.
-
-## Key Constraints
-
-**MAINTAIN:**
-
-- CubicAgentKit 2.3.1 patterns
-- 16 env vars limit
-- SOLID principles
-- Dual usage (app + library)
-
-**AVOID:**
-
-- Additional env variables
-- Complex middleware
-- Manual initialization
-- Streaming responses
-- Monolithic functions
-
-## Commands
-
-- `npm run dev|build|start|lint|test`
-- `npm run test:integration` (requires OPENAI_API_KEY)
-
-Package: `@cubicler/cubicagent-openai` v2.3.1
+- Architecture: contract-based, SOLID, and dependency inversion; avoid clever hacks.
+- Code: TypeScript-first with explicit types; prefer small, pure functions; justify any mutation.
+- Errors: never swallow; bubble via typed errors or a Result/Either style.
+- Tests: TDD-leaning; propose and add unit tests first (Vitest by default).
+- Docs: write short JSDoc for public functions; add an ADR note when changing architecture.
+- Security: validate inputs and sanitize external data; never commit secrets.
+- Git: make atomic commits with clear messages; show planned diff before writing.

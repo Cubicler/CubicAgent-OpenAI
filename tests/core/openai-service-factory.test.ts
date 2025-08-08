@@ -310,18 +310,6 @@ describe('OpenAI Service Factory', () => {
       );
     });
 
-    it('should throw error when STDIO_COMMAND is missing for STDIO mode', async () => {
-      mockLoadConfig.mockReturnValue({
-        openai: { apiKey: 'test' },
-        dispatch: {},
-        transport: { mode: 'stdio' }, // Missing command
-        memory: { enabled: false }
-      });
-
-      await expect(createOpenAIServiceFromEnv()).rejects.toThrow(
-        'STDIO_COMMAND is required for stdio transport mode'
-      );
-    });
   });
 
   describe('SSE Transport Mode', () => {
@@ -618,11 +606,7 @@ describe('OpenAI Service Factory', () => {
       expect(service).toBeInstanceOf(OpenAIService);
       
       const mockStdioAgentClient = vi.mocked(StdioAgentClient);
-      expect(mockStdioAgentClient).toHaveBeenCalledWith(
-        'node',
-        ['--experimental-modules', 'server.js'],
-        '/custom/path'
-      );
+      expect(mockStdioAgentClient).toHaveBeenCalledWith();
     });
   });
 });

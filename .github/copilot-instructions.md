@@ -1,102 +1,54 @@
-# CubicAgent-OpenAI Development Guide
+# Repository Guidelines
 
-OpenAI agent + npm library integrating GPT models with Cubicler 2.3.0 via CubicAgentKit 2.3.2.
+## Project Structure & Module Organization
 
-## Core Architecture
-**Built on CubicAgentKit 2.3.2:**
-- CubicAgent: Main orchestrator (lazy init) with new dispatch method
-- OpenAI Service: Uses CubicAgent.dispatch() for simplified processing  
-- Memory: SQLite/in-memory with internal tools
-- Transport: HTTP/stdio modes
+- Source: `src/` (core logic in `src/core/`, config in `src/config/`, internal tools in `src/internal-tools/`, helpers in `src/utils/`, types in `src/models/`).
+- Entry point: `src/index.ts` → compiled to `dist/index.js`.
+- Tests: `tests/unit/` and `tests/integration/` with setup in `tests/setup.ts`.
+- Build output: `dist/` (ignored by lint/tests).
 
-**Key Features:** Lazy init, session iteration limits, MCP→OpenAI mapping, retry logic, dual usage (app+library)
+## Build, Test, and Development Commands
 
-## Environment Variables (16 total)
-**Required:** `OPENAI_API_KEY`
+- `npm run dev`: Start TypeScript in watch mode via `tsx`.
+- `npm run build`: Type-check and compile to `dist/` using `tsc`.
+- `npm start`: Run compiled app (`dist/index.js`). Also the CLI bin `cubicagent-openai` points here.
+- `npm test`: Run all tests with Vitest. Variants: `test:unit`, `test:integration`, `test:watch`.
+- `npm run test:coverage`: Generate coverage (text, lcov, html).
+- `npm run lint` / `lint:fix`: Check/fix lint issues in `src/**/*.ts`.
+- Docker: see `DOCKER.md` and `docker-compose.yml` for containerized runs.
 
-**Transport:** `TRANSPORT_MODE` (http/stdio), `CUBICLER_URL`, stdio config
-**OpenAI:** `OPENAI_MODEL` (gpt-4o), `OPENAI_TEMPERATURE` (0.7), tokens, org/project, timeout/retries
-**Memory:** `MEMORY_ENABLED` (false), `MEMORY_TYPE` (memory/sqlite), path, tokens, importance
-**Dispatch:** `DISPATCH_SESSION_MAX_ITERATION` (10), timeouts, retries, endpoint, port
+## Coding Style & Naming Conventions
 
-## Core Services
-**OpenAIService:** Uses CubicAgent.dispatch() for streamlined request processing → handles agent requests with built-in tool execution → converts AgentResponse to RawAgentResponse → maintains compatibility with existing interface
+- Language: TypeScript (ES2022, strict mode on). Path alias: `@/*` → `src/*`.
+- Linting: ESLint with `@typescript-eslint` (see `eslint.config.js`). No unused vars, prefer `const`, no `var`.
+- Files: kebab-case for filenames (e.g., `openai-service.ts`), `.interface.ts` for interfaces.
+- Indentation & formatting: follow ESLint autofix; keep imports ordered logically.
+- Public APIs: export explicit types from `src/models` and `src/config` where relevant.
 
-**MessageBuilder:** Convert AgentRequest.messages to OpenAI format → include iteration context → preserve tool_calls → clean responses
+## Testing Guidelines
 
-## Session Flow
-1. Initialize counter → 2. Get tools → 3. OpenAI request → 4. Execute tools → 5. Check limit → 6. Cleanup
+- Framework: Vitest (`vitest.config.ts`). Test files: `tests/**/*.{test,spec}.ts`.
+- Structure: mirror source folders under `tests/unit` and `tests/integration`.
+- Conventions: name tests after target module (e.g., `openai-service.test.ts`). Keep deterministic, use `tests/setup.ts` for globals.
+- Coverage: run `npm run test:coverage`; include `src/**/*.ts` only.
 
-## Key Constraints
-**MAINTAIN:** CubicAgentKit 2.3.2 patterns, 16 env vars, SOLID principles, dual usage, lazy init, memory integration
-**AVOID:** Additional env vars, complex middleware, manual init, streaming, monoliths
+## Commit & Pull Request Guidelines
 
----
+- Commits: use Conventional Commits when possible (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `ci:`). Keep messages imperative and scoped.
+- PRs: include clear description, rationale, and screenshots/log excerpts if behavior changes. Link issues, list notable env/config changes, and update `README.md`/`.env.example` as needed.
+- Quality gate: PRs should pass lint, tests, and include tests for new logic.
 
-# Dev Standards
+## Security & Configuration Tips
 
-## Core Philosophy
-Write **clean, testable, maintainable** code. Prefer simple solutions over complex abstractions.
+- Use `.env` (see `.env.example`). Do not commit secrets. Required: `OPENAI_API_KEY`; set transport via `TRANSPORT_MODE` (`http`|`stdio`|`sse`) and related vars (e.g., `CUBICLER_URL`, `SSE_URL`).
+- Validate config with `loadConfig()` (`src/config/environment.ts`); prefer updating schemas when adding vars.
 
-## Key Principles
-- **SOLID**: Single responsibility, open/closed, Liskov substitution, interface segregation, dependency inversion
-- **Methods**: Short, focused, meaningful names, ≤3-4 params, validate early
-- **Architecture**: Separation of concerns, DI, interface-based design
-- **Error Handling**: Let unexpected errors bubble up, only catch what you can handle
-- **Testing**: Unit test logic, integration test workflows, cover edge cases
+## Engineering Principles
 
-## Standards
-- Descriptive naming (booleans: `is/has/can/should`)
-- Self-explanatory code, comment *why* not *what*
-- Validate/sanitize inputs, use env vars for config
-- Profile before optimizing, prioritize clarity
-- Follow language idioms and conventions
-
-## Don'ts
-- Sacrifice quality for speed
-- Write monoliths or mega-functions  
-- Swallow errors or hardcode values
-- Implement unrequested features
-
-**Ask if unclear—implement what's requested, ensure quality.**
-
----
-
-## Your Memory Management Instructions
-
-Follow these steps for each interaction:
-
-1. User Identification:
-   - You should assume that you are interacting with default_user
-   - If you have not identified default_user, proactively try to do so.
-
-2. Memory Retrieval:
-   - Always begin your chat by saying only "Recalling..." and retrieve all relevant information from your knowledge graph
-   - Always refer to your knowledge graph as your "memory"
-   - Always do the "Recalling..." step if you are not sure about what to do next that might be stored in your memory
-
-3. Memory
-   - While conversing with the user, be attentive to any new information that falls into these categories:
-     - Basic Identity (age, gender, location, job title, education level, etc.)
-     - Behaviors (interests, habits, etc.)
-     - Preferences (communication style, preferred language, etc.)
-     - Project (important!):
-        - Architecture, and implementation decisions
-        - Project goals, milestones, and deadlines
-        - Project-specific knowledge (e.g., domain-specific terms, technologies used)
-
-4. Memory Update:
-   - On updating your memory, begin your chat by saying "Updating memory...".
-   - If any new information was gathered during the interaction, update your memory as follows:
-     - Create entities for recurring organizations, people, and significant events
-     - Connect them to the current entities using relations
-     - Store facts about them as observations
-
-## Work with Me
-
-- Always ask for clarification if you are unsure about something
-- Before start working on tasks, make a checklist plan and ask for confirmation
-- On each task completion, go back to the checklist and mark the task as done
-- If you encounter an issue during task completion, update the checklist with the issue as another task
-- Don't add new tasks to the checklist unless explicitly asked
-- Stop only after all tasks are done or you cannot proceed due to an issue
+- Architecture: contract-based, SOLID, and dependency inversion; avoid clever hacks.
+- Code: TypeScript-first with explicit types; prefer small, pure functions; justify any mutation.
+- Errors: never swallow; bubble via typed errors or a Result/Either style.
+- Tests: TDD-leaning; propose and add unit tests first (Vitest by default).
+- Docs: write short JSDoc for public functions; add an ADR note when changing architecture.
+- Security: validate inputs and sanitize external data; never commit secrets.
+- Git: make atomic commits with clear messages; show planned diff before writing.

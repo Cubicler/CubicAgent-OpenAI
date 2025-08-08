@@ -61,10 +61,6 @@ export const transportConfigSchema = z.object({
   // SSE-specific options
   sseUrl: z.string().url().optional(), // Required for SSE mode (e.g., 'http://localhost:8080')
   agentId: z.string().optional(), // Required for SSE mode (unique agent identifier)
-  // Stdio-specific options  
-  command: z.string().optional(), // Required for stdio mode (e.g., 'npx', 'cubicler')
-  args: z.array(z.string()).default([]), // Args for stdio command
-  cwd: z.string().optional(), // Working directory for stdio process
 });
 
 // Memory Configuration Schema
@@ -139,9 +135,6 @@ export function loadConfig() {
       cubiclerUrl: process.env['CUBICLER_URL'] || undefined,
       sseUrl: process.env['SSE_URL'] || undefined,
       agentId: process.env['SSE_AGENT_ID'] || undefined,
-      command: process.env['STDIO_COMMAND'] || undefined,
-      args: process.env['STDIO_ARGS']?.split(',').map(arg => arg.trim()) || [],
-      cwd: process.env['STDIO_CWD'] || undefined,
     },
     memory: {
       enabled: process.env['MEMORY_ENABLED'] === 'true',

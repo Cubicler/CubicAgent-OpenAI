@@ -227,10 +227,7 @@ describe('Environment Configuration', () => {
         },
         transport: {
           mode: 'http' as const,
-          cubiclerUrl: 'http://localhost:8080',
-          command: undefined,
-          args: [],
-          cwd: undefined
+          cubiclerUrl: 'http://localhost:8080'
         },
         memory: {
           enabled: true,

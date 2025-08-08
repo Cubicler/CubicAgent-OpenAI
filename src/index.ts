@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createOpenAIServiceFromEnv } from './core/openai-service-factory.js';
+import { parseArgs, printHelp, printVersion } from './utils/cli-args.js';
 
 /**
  * Main entry point for CubicAgent-OpenAI
@@ -8,10 +9,24 @@ import { createOpenAIServiceFromEnv } from './core/openai-service-factory.js';
  */
 async function main() {
   try {
+    // Parse command-line arguments
+    const cliArgs = parseArgs();
+
+    // Handle help and version
+    if (cliArgs.help) {
+      printHelp();
+      return;
+    }
+
+    if (cliArgs.version) {
+      printVersion();
+      return;
+    }
+
     console.log('Loading configuration and initializing OpenAI service...');
 
-    // Create the OpenAI service from environment variables
-    const openaiService = await createOpenAIServiceFromEnv();
+    // Create the OpenAI service from environment variables with CLI args override
+    const openaiService = await createOpenAIServiceFromEnv(cliArgs);
 
     // Start the service
     await openaiService.start();

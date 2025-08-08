@@ -14,6 +14,8 @@ import {
   type AgentServer
 } from '@cubicler/cubicagentkit';
 import { loadConfig, type TransportConfig, type DispatchConfig, type MemoryConfig, type JWTConfig, type OpenAIConfig, type Config } from '../config/environment.js';
+import { type CLIArgs } from '../utils/cli-args.js';
+import { mergeConfigWithArgs } from '../utils/config-merger.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 import type { InternalTool } from '../internal-tools/internal-tool.interface.js';
 import { InternalToolAggregator } from './internal-tool-aggregator.js';
@@ -38,10 +40,12 @@ import { SummarizerInternalTool } from '../internal-tools/summarizer/summarizer-
 import { initializeShortTermMemoryOnFirstLoad } from '../utils/memory-init-helper.js';
 
 /**
- * Factory function to create OpenAIService from environment variables
+ * Factory function to create OpenAIService from environment variables with optional CLI args override
  */
-export async function createOpenAIServiceFromEnv(): Promise<OpenAIService> {
-  const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig, jwt: jwtConfig } = loadConfig();
+export async function createOpenAIServiceFromEnv(cliArgs?: CLIArgs): Promise<OpenAIService> {
+  const baseConfig = loadConfig();
+  const config = cliArgs ? mergeConfigWithArgs(baseConfig, cliArgs) : baseConfig;
+  const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig, jwt: jwtConfig } = config;
 
   // Initialize memory if configured
   const memory = await initializeMemory(memoryConfig);
@@ -262,15 +266,7 @@ function createStdioCubicAgent(
   transportConfig: TransportConfig,
   memory: MemoryRepository | undefined
 ): CubicAgent {
-  if (!transportConfig.command) {
-    throw new Error('STDIO_COMMAND is required for stdio transport mode');
-  }
-
-  const client = new StdioAgentClient(
-    transportConfig.command,
-    transportConfig.args,
-    transportConfig.cwd
-  );
+  const client = new StdioAgentClient();
   const server = new StdioAgentServer();
   const cubicAgent = new CubicAgent(client, server, memory);
   

@@ -334,20 +334,50 @@ When installed globally or used with npx:
 
 ```bash
 # Start with default configuration
-cubicagent-openai
+npx @cubicler/cubicagent-openai
 
-# Start with custom environment file
-cubicagent-openai --env-file /path/to/.env
+# With command-line options (stdio by default)
+npx @cubicler/cubicagent-openai --model gpt-4o --temperature 0.3
+npx @cubicler/cubicagent-openai --memory-db-path ./memories.db
+npx @cubicler/cubicagent-openai --transport http --cubicler-url http://localhost:8080
 
-# Start with specific port
-cubicagent-openai --port 8080
-
-# Show help
-cubicagent-openai --help
+# Show help and all available options
+npx @cubicler/cubicagent-openai --help
 
 # Show version
-cubicagent-openai --version
+npx @cubicler/cubicagent-openai --version
 ```
+
+#### MCP-Style Usage for Stdio Agent
+
+To use as a stdio agent that can be spawned by Cubicler (similar to MCP servers):
+
+**Cubicler agents.json configuration:**
+
+```json
+{
+  "agents": {
+    "openai-agent": {
+      "name": "OpenAI Agent",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["@cubicler/cubicagent-openai", "--model", "gpt-4o", "--memory-db-path", "./openai-agent-memory.db"],
+      "description": "OpenAI agent with function calling",
+      "env": {
+        "OPENAI_API_KEY": "sk-your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+**Available CLI Options:**
+
+- `--model <model>` - OpenAI model (gpt-4o, gpt-4, gpt-3.5-turbo, etc.)
+- `--temperature <temp>` - Response temperature (0.0-2.0)
+- `--transport <mode>` - Transport mode (http, stdio, sse) - default: stdio
+- `--memory-db-path <path>` - Enable memory system with SQLite database path
+- See `--help` for complete list
 
 ## �🐳 Docker Deployment
 
