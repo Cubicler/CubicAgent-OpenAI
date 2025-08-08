@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2025-08-09
+
+### Added
+
+- **CubicAgentKit 2.6.0 support** - Upgraded to the latest version of CubicAgentKit for enhanced functionality and compatibility
+
+### Changed
+
+- **Updated CubicAgentKit dependency** to `^2.6.0` for latest features and improvements
+- **Updated project version** to 2.6.0 to match CubicAgentKit version alignment
+- **Enhanced README documentation** - Updated all version references from 2.3.x/2.5.x to 2.6.x throughout
+- **Improved error handling** - Added null-safe checks in OpenAI service logging for better robustness
+- **Organized client utilities** - Moved null agent client to dedicated `src/client/` directory for better code organization
+
+### Fixed
+
+- **Null safety improvements** - Added optional chaining for agent name, tools count, and trigger identifier logging
+- **Documentation consistency** - Updated all Cubicler and CubicAgentKit version references to 2.6.x
+
+### Dependencies
+
+- Upgraded `@cubicler/cubicagentkit` from `^2.5.0` to `^2.6.0`
+
+### Notes
+
+- **Backward compatibility maintained** - All existing APIs and functionality remain unchanged
+- **Zero breaking changes** - Seamless upgrade from 2.5.0 with full test suite passing (242 tests)
+- **Ready for Cubicler 2.6** - Full compatibility with the latest Cubicler orchestration framework
+
 ## [2.5.0] - 2025-08-09
 
 ### Added
@@ -76,5 +105,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Prior versions included OpenAI service creation via environment variables, memory tools, summarizer tools, and JWT support.
 
+[2.6.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.0
 [2.5.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.5.0
 [2.4.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.4.0

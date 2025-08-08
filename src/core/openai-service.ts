@@ -38,7 +38,10 @@ export class OpenAIService {
     await this.cubicAgent
       .start()
       .onMessage(async (request, client, context) => {
-        console.log(`📨 ${request.agent.name} | ${request.tools.length} tools | ${request.messages.length} msgs`);
+        const agentName = request.agent?.name || 'Unknown Agent';
+        const toolsCount = request.tools?.length || 0;
+        const messagesCount = request.messages?.length || 0;
+        console.log(`📨 ${agentName} | ${toolsCount} tools | ${messagesCount} msgs`);
         try {
           const ctx = context.memory ? { memory: context.memory } : undefined;
           return await this.messageHandler.handleMessage(request, client, ctx);
@@ -48,7 +51,10 @@ export class OpenAIService {
         }
       })
       .onTrigger(async (request, client, context) => {
-        console.log(`🪝 ${request.agent.name} | ${request.tools.length} tools | trigger: ${request.trigger.identifier}`);
+        const agentName = request.agent?.name || 'Unknown Agent';
+        const toolsCount = request.tools?.length || 0;
+        const triggerName = request.trigger?.identifier || 'unknown';
+        console.log(`🪝 ${agentName} | ${toolsCount} tools | trigger: ${triggerName}`);
         try {
           const ctx = context.memory ? { memory: context.memory } : undefined;
           return await this.triggerHandler.handleWebhook(request, client, ctx);

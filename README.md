@@ -1,6 +1,6 @@
 # CubicAgent-OpenAI 🤖
 
-A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.3](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.3.4`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
+A **ready-to-deploy OpenAI agent application and npm library** that integrates OpenAI's language models (GPT-4, GPT-4o, GPT-3.5-turbo) with [Cubicler 2.6](https://github.com/hainayanda/Cubicler) using [`@cubicler/cubicagentkit@^2.6.0`](https://www.npmjs.com/package/@cubicler/cubicagentkit) as the foundation library.
 
 ## 🎯 Overview
 
@@ -25,7 +25,7 @@ CubicAgent-OpenAI is both a **deployable agent application** and a **reusable np
 
 - Node.js 18+
 - OpenAI API key
-- Running Cubicler 2.3 instance (connects automatically on first request)
+- Running Cubicler 2.6 instance (connects automatically on first request)
 
 ### Installation
 
@@ -740,7 +740,7 @@ tsconfig.json                        # TypeScript configuration
 ### Key Components
 
 - **OpenAIService**: Main service class handling OpenAI API integration and iterative function calling
-- **CubicAgent**: Core orchestrator from CubicAgentKit 2.3.1 with lazy initialization
+- **CubicAgent**: Core orchestrator from CubicAgentKit 2.6.0 with lazy initialization
 - **Message Helper**: Utilities for converting between Cubicler and OpenAI message formats
 - **Environment Configuration**: Zod-based validation for all environment variables
 - **Lazy Initialization**: Automatic connection to Cubicler on first dispatch request
@@ -827,10 +827,10 @@ All errors are handled gracefully with structured logging and appropriate HTTP s
 
 ## 🤝 Integration with Cubicler
 
-This agent integrates with Cubicler 2.3 using the lazy initialization pattern:
+This agent integrates with Cubicler 2.6 using the lazy initialization pattern:
 
 1. **Application Startup**: Agent starts HTTP server immediately without connecting to Cubicler
-2. **Lazy Connection**: CubicAgentKit 2.3.1 automatically connects on first dispatch request
+2. **Lazy Connection**: CubicAgentKit 2.6.0 automatically connects on first dispatch request
 3. **Tool Discovery**: Agent fetches available MCP tools from Cubicler
 4. **Function Calling**: OpenAI can call tools, agent executes via MCP, continues conversation
 5. **Session Management**: Handles multi-turn conversations with iteration and token limits
@@ -842,8 +842,8 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 
 ## 🔗 Related Projects
 
-- [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework 2.3
-- [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK 2.3.1
+- [Cubicler](https://github.com/hainayanda/Cubicler) - AI Orchestration Framework 2.6
+- [@cubicler/cubicagentkit](https://www.npmjs.com/package/@cubicler/cubicagentkit) - Agent SDK 2.6.0
 - [@cubicler/cubicagent-openai](https://www.npmjs.com/package/@cubicler/cubicagent-openai) - This package on npm
 
 ## 🐛 Troubleshooting
@@ -853,7 +853,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 **Agent won't start:**
 
 - Check that `OPENAI_API_KEY` is set correctly
-- Verify `CUBICLER_URL` points to a valid Cubicler 2.3 instance
+- Verify `CUBICLER_URL` points to a valid Cubicler 2.6 instance
 - Ensure port 3000 (or configured `AGENT_PORT`) is available
 - Verify Node.js version is 18+
 
@@ -867,7 +867,7 @@ Apache License 2.0 - see [LICENSE](LICENSE) file for details.
 **Lazy initialization issues:**
 
 - Agent starts successfully but connection happens on first request
-- Check Cubicler 2.3 is running and accessible at `CUBICLER_URL`
+- Check Cubicler 2.6 is running and accessible at `CUBICLER_URL`
 - Review `MCP_CALL_TIMEOUT` and `MCP_MAX_RETRIES` for network issues
 - Verify firewall and network connectivity between services
 
