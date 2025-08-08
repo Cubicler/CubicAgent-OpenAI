@@ -5,6 +5,15 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.{test,spec}.ts'],
     exclude: ['tests/setup.ts', 'node_modules/**'],
+    // Reduce worker complexity to avoid tinypool termination issues in constrained sandboxes
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+        maxThreads: 1,
+        minThreads: 1,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],

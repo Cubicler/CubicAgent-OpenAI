@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AgentTool, AgentClient } from '@cubicler/cubicagentkit';
-import { SummarizerToolInstance, createSummarizerTools } from '../../../src/internal-tools/summarizer/summarizer-tool.js';
+import { SummarizerToolInstance, createSummarizerTools } from '../../src/internal-tools/summarizer/summarizer-tool.js';
 
 // Mock OpenAI module
 const mockCreate = vi.fn();

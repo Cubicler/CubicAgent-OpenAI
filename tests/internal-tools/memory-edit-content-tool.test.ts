@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import { MemoryRemoveTagTool } from '../../../src/internal-tools/memory/memory-remove-tag-tool.js';
+import { MemoryEditContentTool } from '../../src/internal-tools/memory/memory-edit-content-tool.js';
 
-describe('MemoryRemoveTagTool', () => {
+describe('MemoryEditContentTool', () => {
   let mockMemoryRepository: MemoryRepository;
-  let tool: MemoryRemoveTagTool;
+  let tool: MemoryEditContentTool;
 
   beforeEach(() => {
     mockMemoryRepository = {
@@ -21,18 +21,18 @@ describe('MemoryRemoveTagTool', () => {
       forget: vi.fn()
     } as MemoryRepository;
 
-    tool = new MemoryRemoveTagTool(mockMemoryRepository);
+    tool = new MemoryEditContentTool(mockMemoryRepository);
   });
 
   describe('toolName', () => {
-    it('should return agentmemory_remove_tag', () => {
-      expect(tool.toolName).toBe('agentmemory_remove_tag');
+    it('should return agentmemory_edit_content', () => {
+      expect(tool.toolName).toBe('agentmemory_edit_content');
     });
   });
 
   describe('canHandle', () => {
-    it('should return true for agentmemory_remove_tag function (matches toolName)', () => {
-      expect(tool.canHandle('agentmemory_remove_tag')).toBe(true);
+    it('should return true for agentmemory_edit_content function (matches toolName)', () => {
+      expect(tool.canHandle('agentmemory_edit_content')).toBe(true);
     });
 
     it('should return false for other functions', () => {
@@ -52,21 +52,21 @@ describe('MemoryRemoveTagTool', () => {
       expect(definition).toEqual({
         type: 'function',
         function: {
-          name: 'agentmemory_remove_tag',
-          description: 'Remove a tag from an existing memory (will throw error if it would result in empty tags)',
+          name: 'agentmemory_edit_content',
+          description: 'Edit the content/sentence of an existing memory',
           parameters: {
             type: 'object',
             properties: {
               id: {
                 type: 'string',
-                description: 'Memory ID to remove tag from'
+                description: 'Memory ID to edit'
               },
-              tag: {
+              sentence: {
                 type: 'string',
-                description: 'Tag to remove'
+                description: 'New memory sentence'
               }
             },
-            required: ['id', 'tag']
+            required: ['id', 'sentence']
           }
         }
       });
@@ -74,57 +74,57 @@ describe('MemoryRemoveTagTool', () => {
   });
 
   describe('execute', () => {
-    it('should successfully remove tag from memory', async () => {
-      (mockMemoryRepository.removeTag as any).mockResolvedValue(true);
+    it('should successfully edit memory content', async () => {
+      (mockMemoryRepository.editContent as any).mockResolvedValue(true);
 
       const result = await tool.execute({
         id: 'mem-123',
-        tag: 'obsolete'
+        sentence: 'Updated memory content'
       });
 
-      expect(mockMemoryRepository.removeTag).toHaveBeenCalledWith('mem-123', 'obsolete');
+      expect(mockMemoryRepository.editContent).toHaveBeenCalledWith('mem-123', 'Updated memory content');
       expect(result).toEqual({
         success: true,
-        message: 'Tag removed successfully',
+        message: 'Content updated successfully',
         memoryId: 'mem-123',
-        tag: 'obsolete'
+        newSentence: 'Updated memory content'
       });
     });
 
-    it('should handle memory not found or tag does not exist', async () => {
-      (mockMemoryRepository.removeTag as any).mockResolvedValue(false);
+    it('should handle memory not found', async () => {
+      (mockMemoryRepository.editContent as any).mockResolvedValue(false);
 
       const result = await tool.execute({
         id: 'nonexistent-id',
-        tag: 'work'
+        sentence: 'New content'
       });
 
-      expect(mockMemoryRepository.removeTag).toHaveBeenCalledWith('nonexistent-id', 'work');
+      expect(mockMemoryRepository.editContent).toHaveBeenCalledWith('nonexistent-id', 'New content');
       expect(result).toEqual({
         success: false,
-        message: 'Memory not found or tag does not exist',
+        message: 'Memory not found',
         memoryId: 'nonexistent-id',
-        tag: 'work'
+        newSentence: 'New content'
       });
     });
 
     it('should handle repository errors', async () => {
-      (mockMemoryRepository.removeTag as any).mockRejectedValue(new Error('Remove tag failed'));
+      (mockMemoryRepository.editContent as any).mockRejectedValue(new Error('Edit failed'));
 
       const result = await tool.execute({
         id: 'mem-123',
-        tag: 'important'
+        sentence: 'New content'
       });
 
       expect(result).toEqual({
         success: false,
-        error: 'Remove tag failed'
+        error: 'Edit failed'
       });
     });
 
     it('should handle missing id parameter', async () => {
       const result = await tool.execute({
-        tag: 'important'
+        sentence: 'New content'
       });
 
       expect(result).toEqual({
@@ -133,69 +133,55 @@ describe('MemoryRemoveTagTool', () => {
       });
     });
 
-    it('should handle missing tag parameter', async () => {
+    it('should handle missing sentence parameter', async () => {
       const result = await tool.execute({
         id: 'mem-123'
       });
 
       expect(result).toEqual({
         success: false,
-        error: expect.stringContaining('tag')
+        error: expect.stringContaining('sentence')
       });
     });
 
-    it('should handle empty tag removal', async () => {
-      (mockMemoryRepository.removeTag as any).mockResolvedValue(true);
+    it('should handle empty sentence', async () => {
+      (mockMemoryRepository.editContent as any).mockResolvedValue(true);
 
       const result = await tool.execute({
         id: 'mem-123',
-        tag: ''
+        sentence: ''
       });
 
-      expect(mockMemoryRepository.removeTag).toHaveBeenCalledWith('mem-123', '');
+      expect(mockMemoryRepository.editContent).toHaveBeenCalledWith('mem-123', '');
       expect(result).toEqual({
         success: true,
-        message: 'Tag removed successfully',
+        message: 'Content updated successfully',
         memoryId: 'mem-123',
-        tag: ''
+        newSentence: ''
       });
     });
 
-    it('should handle special characters in tags', async () => {
-      (mockMemoryRepository.removeTag as any).mockResolvedValue(true);
-      const specialTag = 'work@2024#important!';
+    it('should handle long sentences', async () => {
+      (mockMemoryRepository.editContent as any).mockResolvedValue(true);
+      const longSentence = 'A'.repeat(1000);
 
       const result = await tool.execute({
         id: 'mem-123',
-        tag: specialTag
+        sentence: longSentence
       });
 
-      expect(mockMemoryRepository.removeTag).toHaveBeenCalledWith('mem-123', specialTag);
+      expect(mockMemoryRepository.editContent).toHaveBeenCalledWith('mem-123', longSentence);
       expect(result.success).toBe(true);
-      expect(result.tag).toBe(specialTag);
-    });
-
-    it('should handle constraints that prevent tag removal', async () => {
-      (mockMemoryRepository.removeTag as any).mockRejectedValue(new Error('Cannot remove tag: would result in empty tags'));
-
-      const result = await tool.execute({
-        id: 'mem-123',
-        tag: 'last-tag'
-      });
-
-      expect(result).toEqual({
-        success: false,
-        error: 'Cannot remove tag: would result in empty tags'
-      });
+      expect(result.newSentence).toBe(longSentence);
     });
 
     it('should handle unknown errors', async () => {
        
-      (mockMemoryRepository.removeTag as any).mockRejectedValue('String error');
+      (mockMemoryRepository.editContent as any).mockRejectedValue('String error');
 
       const result = await tool.execute({
         id: 'mem-123',
-        tag: 'work'
+        sentence: 'New content'
       });
 
       expect(result).toEqual({

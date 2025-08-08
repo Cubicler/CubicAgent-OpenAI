@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import { MemoryReplaceTagsTool } from '../../../src/internal-tools/memory/memory-replace-tags-tool.js';
+import { MemoryReplaceTagsTool } from '../../src/internal-tools/memory/memory-replace-tags-tool.js';
 
 describe('MemoryReplaceTagsTool', () => {
   let mockMemoryRepository: MemoryRepository;

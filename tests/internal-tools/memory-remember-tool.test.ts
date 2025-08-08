@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import { MemoryRememberTool } from '../../../src/internal-tools/memory/memory-remember-tool.js';
+import { MemoryRememberTool } from '../../src/internal-tools/memory/memory-remember-tool.js';
 
 describe('MemoryRememberTool', () => {
   let mockMemoryRepository: MemoryRepository;

@@ -47,5 +47,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 // Export for library usage
-export { createOpenAIServiceFromEnv } from './core/openai-service-factory.js';
+export { 
+  createOpenAIServiceFromEnv,
+  createOpenAIServiceFromConfig,
+  createOpenAIServiceWithMemory,
+  createOpenAIServiceBasic
+} from './core/openai-service-factory.js';
 export { OpenAIService } from './core/openai-service.js';

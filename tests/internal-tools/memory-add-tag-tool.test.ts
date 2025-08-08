@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import { MemoryEditImportanceTool } from '../../../src/internal-tools/memory/memory-edit-importance-tool.js';
+import { MemoryAddTagTool } from '../../src/internal-tools/memory/memory-add-tag-tool.js';
 
-describe('MemoryEditImportanceTool', () => {
+describe('MemoryAddTagTool', () => {
   let mockMemoryRepository: MemoryRepository;
-  let tool: MemoryEditImportanceTool;
+  let tool: MemoryAddTagTool;
 
   beforeEach(() => {
     mockMemoryRepository = {
@@ -21,18 +21,18 @@ describe('MemoryEditImportanceTool', () => {
       forget: vi.fn()
     } as MemoryRepository;
 
-    tool = new MemoryEditImportanceTool(mockMemoryRepository);
+    tool = new MemoryAddTagTool(mockMemoryRepository);
   });
 
   describe('toolName', () => {
-    it('should return agentmemory_edit_importance', () => {
-      expect(tool.toolName).toBe('agentmemory_edit_importance');
+    it('should return agentmemory_add_tag', () => {
+      expect(tool.toolName).toBe('agentmemory_add_tag');
     });
   });
 
   describe('canHandle', () => {
-    it('should return true for agentmemory_edit_importance function (matches toolName)', () => {
-      expect(tool.canHandle('agentmemory_edit_importance')).toBe(true);
+    it('should return true for agentmemory_add_tag function (matches toolName)', () => {
+      expect(tool.canHandle('agentmemory_add_tag')).toBe(true);
     });
 
     it('should return false for other functions', () => {
@@ -52,23 +52,21 @@ describe('MemoryEditImportanceTool', () => {
       expect(definition).toEqual({
         type: 'function',
         function: {
-          name: 'agentmemory_edit_importance',
-          description: 'Edit the importance score of an existing memory',
+          name: 'agentmemory_add_tag',
+          description: 'Add a tag to an existing memory',
           parameters: {
             type: 'object',
             properties: {
               id: {
                 type: 'string',
-                description: 'Memory ID to edit'
+                description: 'Memory ID to add tag to'
               },
-              importance: {
-                type: 'number',
-                description: 'New importance score (0-1)',
-                minimum: 0,
-                maximum: 1
+              tag: {
+                type: 'string',
+                description: 'Tag to add'
               }
             },
-            required: ['id', 'importance']
+            required: ['id', 'tag']
           }
         }
       });
@@ -76,57 +74,57 @@ describe('MemoryEditImportanceTool', () => {
   });
 
   describe('execute', () => {
-    it('should successfully edit memory importance', async () => {
-      (mockMemoryRepository.editImportance as any).mockResolvedValue(true);
+    it('should successfully add tag to memory', async () => {
+      (mockMemoryRepository.addTag as any).mockResolvedValue(true);
 
       const result = await tool.execute({
         id: 'mem-123',
-        importance: 0.8
+        tag: 'important'
       });
 
-      expect(mockMemoryRepository.editImportance).toHaveBeenCalledWith('mem-123', 0.8);
+      expect(mockMemoryRepository.addTag).toHaveBeenCalledWith('mem-123', 'important');
       expect(result).toEqual({
         success: true,
-        message: 'Importance updated successfully',
+        message: 'Tag added successfully',
         memoryId: 'mem-123',
-        newImportance: 0.8
+        tag: 'important'
       });
     });
 
-    it('should handle memory not found', async () => {
-      (mockMemoryRepository.editImportance as any).mockResolvedValue(false);
+    it('should handle memory not found or tag already exists', async () => {
+      (mockMemoryRepository.addTag as any).mockResolvedValue(false);
 
       const result = await tool.execute({
         id: 'nonexistent-id',
-        importance: 0.5
+        tag: 'work'
       });
 
-      expect(mockMemoryRepository.editImportance).toHaveBeenCalledWith('nonexistent-id', 0.5);
+      expect(mockMemoryRepository.addTag).toHaveBeenCalledWith('nonexistent-id', 'work');
       expect(result).toEqual({
         success: false,
-        message: 'Memory not found',
+        message: 'Memory not found or tag already exists',
         memoryId: 'nonexistent-id',
-        newImportance: 0.5
+        tag: 'work'
       });
     });
 
     it('should handle repository errors', async () => {
-      (mockMemoryRepository.editImportance as any).mockRejectedValue(new Error('Edit failed'));
+      (mockMemoryRepository.addTag as any).mockRejectedValue(new Error('Add tag failed'));
 
       const result = await tool.execute({
         id: 'mem-123',
-        importance: 0.7
+        tag: 'important'
       });
 
       expect(result).toEqual({
         success: false,
-        error: 'Edit failed'
+        error: 'Add tag failed'
       });
     });
 
     it('should handle missing id parameter', async () => {
       const result = await tool.execute({
-        importance: 0.8
+        tag: 'important'
       });
 
       expect(result).toEqual({
@@ -135,56 +133,55 @@ describe('MemoryEditImportanceTool', () => {
       });
     });
 
-    it('should handle missing importance parameter', async () => {
+    it('should handle missing tag parameter', async () => {
       const result = await tool.execute({
         id: 'mem-123'
       });
 
       expect(result).toEqual({
         success: false,
-        error: expect.stringContaining('importance')
+        error: expect.stringContaining('tag')
       });
     });
 
-    it('should handle invalid importance values', async () => {
+    it('should handle empty tag', async () => {
+      (mockMemoryRepository.addTag as any).mockResolvedValue(true);
+
       const result = await tool.execute({
         id: 'mem-123',
-        importance: 'invalid'
+        tag: ''
       });
 
+      expect(mockMemoryRepository.addTag).toHaveBeenCalledWith('mem-123', '');
       expect(result).toEqual({
-        success: false,
-        error: expect.stringContaining('importance')
+        success: true,
+        message: 'Tag added successfully',
+        memoryId: 'mem-123',
+        tag: ''
       });
     });
 
-    it('should handle boundary importance values', async () => {
-      (mockMemoryRepository.editImportance as any).mockResolvedValue(true);
+    it('should handle special characters in tags', async () => {
+      (mockMemoryRepository.addTag as any).mockResolvedValue(true);
+      const specialTag = 'work@2024#important!';
 
-      // Test minimum value
-      let result = await tool.execute({
+      const result = await tool.execute({
         id: 'mem-123',
-        importance: 0
+        tag: specialTag
       });
-      expect(result.success).toBe(true);
-      expect(result.newImportance).toBe(0);
 
-      // Test maximum value
-      result = await tool.execute({
-        id: 'mem-123',
-        importance: 1
-      });
+      expect(mockMemoryRepository.addTag).toHaveBeenCalledWith('mem-123', specialTag);
       expect(result.success).toBe(true);
-      expect(result.newImportance).toBe(1);
+      expect(result.tag).toBe(specialTag);
     });
 
     it('should handle unknown errors', async () => {
        
-      (mockMemoryRepository.editImportance as any).mockRejectedValue('String error');
+      (mockMemoryRepository.addTag as any).mockRejectedValue('String error');
 
       const result = await tool.execute({
         id: 'mem-123',
-        importance: 0.5
+        tag: 'work'
       });
 
       expect(result).toEqual({

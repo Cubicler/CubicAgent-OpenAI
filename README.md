@@ -162,6 +162,53 @@ const service = await createOpenAIServiceFromEnv();
 await service.start();
 ```
 
+#### New: Extended Factory Options
+
+For advanced integration scenarios the library now provides multiple factory helpers:
+
+```typescript
+import {
+  createOpenAIServiceFromEnv,          // Load everything from process.env
+  createOpenAIServiceFromConfig,       // Provide a validated config object
+  createOpenAIServiceWithMemory,       // Supply your own client/server + custom MemoryRepository
+  createOpenAIServiceBasic             // Supply your own client/server (no memory)
+} from '@cubicler/cubicagent-openai';
+
+import { HttpAgentClient, HttpAgentServer, createDefaultMemoryRepository } from '@cubicler/cubicagentkit';
+import { loadConfig } from '@cubicler/cubicagent-openai/config'; // or build your own config object
+
+// 1. From explicit config (you may reuse environment.ts schema in your app)
+const fullConfig = loadConfig();
+const serviceFromConfig = await createOpenAIServiceFromConfig(fullConfig);
+await serviceFromConfig.start();
+
+// 2. With custom client/server + memory (e.g., embedding in existing infra)
+const openaiConfig = fullConfig.openai;           // Pick from your own config system
+const dispatchConfig = fullConfig.dispatch;       // Required for internal loop behavior
+const client = new HttpAgentClient('http://cubicler.local:8080');
+const server = new HttpAgentServer(4000, '/agent');
+const memory = await createDefaultMemoryRepository(2000, 0.5);
+const serviceWithMemory = createOpenAIServiceWithMemory(client, server, memory, openaiConfig, dispatchConfig);
+await serviceWithMemory.start();
+
+// 3. Basic (no memory) supplying only transport primitives
+const basicClient = new HttpAgentClient('http://cubicler.local:8080');
+const basicServer = new HttpAgentServer(3001, '/');
+const basicService = createOpenAIServiceBasic(basicClient, basicServer, openaiConfig, dispatchConfig);
+await basicService.start();
+
+// 4. Still available – auto env loader
+const envService = await createOpenAIServiceFromEnv();
+await envService.start();
+```
+
+Choose the minimal factory that matches your control needs:
+
+- `createOpenAIServiceFromEnv`: Easiest; zero manual wiring.
+- `createOpenAIServiceFromConfig`: If you already centralize configuration and want deterministic instantiation.
+- `createOpenAIServiceWithMemory`: Inject custom memory implementation (e.g., distributed DB) plus your own transport wiring.
+- `createOpenAIServiceBasic`: Full control of transport, opt out of memory tools completely.
+
 #### Direct Service Construction (Advanced)
 
 ```typescript

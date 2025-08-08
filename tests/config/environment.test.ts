@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { loadConfig, openAIConfigSchema, dispatchConfigSchema, configSchema, jwtConfigSchema } from '../../../src/config/environment.js';
+import { loadConfig, openAIConfigSchema, dispatchConfigSchema, configSchema, jwtConfigSchema } from '../../src/config/environment.js';
 
 describe('Environment Configuration', () => {
   let originalEnv: NodeJS.ProcessEnv;

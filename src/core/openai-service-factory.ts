@@ -9,13 +9,18 @@ import {
   createSQLiteMemoryRepository,
   type MemoryRepository,
   type JWTAuthConfig,
-  type JWTMiddlewareConfig
+  type JWTMiddlewareConfig,
+  type AgentClient,
+  type AgentServer
 } from '@cubicler/cubicagentkit';
-import { loadConfig, type TransportConfig, type DispatchConfig, type MemoryConfig, type JWTConfig } from '../config/environment.js';
+import { loadConfig, type TransportConfig, type DispatchConfig, type MemoryConfig, type JWTConfig, type OpenAIConfig, type Config } from '../config/environment.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 import type { InternalTool } from '../internal-tools/internal-tool.interface.js';
 import { InternalToolAggregator } from './internal-tool-aggregator.js';
 import { OpenAIService } from './openai-service.js';
+import OpenAI from 'openai';
+import { OpenAIMessageHandler } from './openai-message-handler.js';
+import { OpenAITriggerHandler } from './openai-trigger-handler.js';
 
 // Import all memory tools for default injection
 import { MemoryRememberTool } from '../internal-tools/memory/memory-remember-tool.js';
@@ -47,7 +52,108 @@ export async function createOpenAIServiceFromEnv(): Promise<OpenAIService> {
   // Initialize client and CubicAgent based on transport mode
   const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
 
-  return new OpenAIService(cubicAgent, openaiConfig, dispatchConfig, internalToolHandler);
+  // Initialize OpenAI client and handlers
+  const openai = new OpenAI({
+    apiKey: openaiConfig.apiKey,
+    organization: openaiConfig.organization,
+    project: openaiConfig.project,
+    baseURL: openaiConfig.baseURL,
+    timeout: openaiConfig.timeout,
+    maxRetries: openaiConfig.maxRetries,
+  });
+
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+}
+
+/**
+ * Factory function to create OpenAIService from an explicit configuration object
+ * (Library usage when caller has already loaded/validated config externally)
+ */
+export async function createOpenAIServiceFromConfig(config: Config): Promise<OpenAIService> {
+  const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig, jwt: jwtConfig } = config;
+
+  // Initialize memory if configured
+  const memory = await initializeMemory(memoryConfig);
+
+  // Create internal tool aggregator with memory tools if memory is available
+  const internalToolHandler = createInternalToolHandler(memory, openaiConfig.apiKey, openaiConfig.summarizerModel);
+
+  // Initialize client and CubicAgent based on transport mode
+  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
+
+  // Initialize OpenAI client and handlers
+  const openai = new OpenAI({
+    apiKey: openaiConfig.apiKey,
+    organization: openaiConfig.organization,
+    project: openaiConfig.project,
+    baseURL: openaiConfig.baseURL,
+    timeout: openaiConfig.timeout,
+    maxRetries: openaiConfig.maxRetries,
+  });
+
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+}
+
+/**
+ * Factory for advanced users supplying their own AgentClient, AgentServer and MemoryRepository
+ * This bypasses transport & memory initialization logic.
+ */
+export function createOpenAIServiceWithMemory(
+  agentClient: AgentClient,
+  agentServer: AgentServer,
+  memory: MemoryRepository,
+  openaiConfig: OpenAIConfig,
+  dispatchConfig: DispatchConfig
+): OpenAIService {
+  const cubicAgent = new CubicAgent(agentClient, agentServer, memory);
+  const internalToolHandler = createInternalToolHandler(memory, openaiConfig.apiKey, openaiConfig.summarizerModel);
+
+  const openai = new OpenAI({
+    apiKey: openaiConfig.apiKey,
+    organization: openaiConfig.organization,
+    project: openaiConfig.project,
+    baseURL: openaiConfig.baseURL,
+    timeout: openaiConfig.timeout,
+    maxRetries: openaiConfig.maxRetries,
+  });
+
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+}
+
+/**
+ * Factory for users supplying only AgentClient & AgentServer (no memory system)
+ */
+export function createOpenAIServiceBasic(
+  agentClient: AgentClient,
+  agentServer: AgentServer,
+  openaiConfig: OpenAIConfig,
+  dispatchConfig: DispatchConfig
+): OpenAIService {
+  const cubicAgent = new CubicAgent(agentClient, agentServer, undefined);
+  const internalToolHandler = undefined; // No memory -> no internal memory tools
+
+  const openai = new OpenAI({
+    apiKey: openaiConfig.apiKey,
+    organization: openaiConfig.organization,
+    project: openaiConfig.project,
+    baseURL: openaiConfig.baseURL,
+    timeout: openaiConfig.timeout,
+    maxRetries: openaiConfig.maxRetries,
+  });
+
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
 }
 
 /**

@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { InternalToolAggregator } from '../../../src/core/internal-tool-aggregator.js';
-import type { InternalTool, InternalToolResult } from '../../../src/internal-tools/internal-tool.interface.js';
+// NOTE: path depth was incorrect (too many ../) causing Vitest to fail loading the file.
+// Correct relative path from tests/core/* to src/* is ../../src/*
+import { InternalToolAggregator } from '../../src/core/internal-tool-aggregator.js';
+import type { InternalTool, InternalToolResult } from '../../src/internal-tools/internal-tool.interface.js';
 import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
-import type { JSONValue } from '../../../src/config/types.js';
+import type { JSONValue } from '../../src/config/types.js';
 
 // Mock tool implementations for testing
 class MockMemoryTool implements InternalTool {

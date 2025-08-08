@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { buildOpenAIMessages, buildSystemMessage, cleanFinalResponse } from '../../../src/utils/message-helper.js';
+import { buildOpenAIMessages, buildSystemMessage, cleanFinalResponse } from '../../src/utils/message-helper.js';
 import type { AgentRequest } from '@cubicler/cubicagentkit';
-import type { OpenAIConfig, DispatchConfig } from '../../../src/config/environment.js';
+import type { OpenAIConfig, DispatchConfig } from '../../src/config/environment.js';
 
 describe('MessageHelper', () => {
   let mockOpenAIConfig: OpenAIConfig;
@@ -126,7 +126,7 @@ describe('MessageHelper', () => {
 
     it('should skip messages with null content', () => {
       const request = createMockAgentRequest();
-      request.messages.push({
+      request.messages?.push({
         type: 'text',
         sender: { id: 'user-3', name: 'User 3' },
         content: null
@@ -140,7 +140,9 @@ describe('MessageHelper', () => {
 
     it('should handle messages from unknown senders', () => {
       const request = createMockAgentRequest();
-      request.messages[0].sender.name = undefined;
+      if (request.messages && request.messages[0]) {
+        request.messages[0].sender.name = undefined;
+      }
 
       const result = buildOpenAIMessages(request, mockOpenAIConfig, mockDispatchConfig, 1);
 

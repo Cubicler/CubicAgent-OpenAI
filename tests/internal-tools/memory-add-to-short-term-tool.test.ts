@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import { MemoryForgetTool } from '../../../src/internal-tools/memory/memory-forget-tool.js';
+import { MemoryAddToShortTermTool } from '../../src/internal-tools/memory/memory-add-to-short-term-tool.js';
 
-describe('MemoryForgetTool', () => {
+describe('MemoryAddToShortTermTool', () => {
   let mockMemoryRepository: MemoryRepository;
-  let tool: MemoryForgetTool;
+  let tool: MemoryAddToShortTermTool;
 
   beforeEach(() => {
     mockMemoryRepository = {
@@ -21,18 +21,18 @@ describe('MemoryForgetTool', () => {
       forget: vi.fn()
     } as MemoryRepository;
 
-    tool = new MemoryForgetTool(mockMemoryRepository);
+    tool = new MemoryAddToShortTermTool(mockMemoryRepository);
   });
 
   describe('toolName', () => {
-    it('should return agentmemory_forget', () => {
-      expect(tool.toolName).toBe('agentmemory_forget');
+    it('should return agentmemory_add_to_short_term', () => {
+      expect(tool.toolName).toBe('agentmemory_add_to_short_term');
     });
   });
 
   describe('canHandle', () => {
-    it('should return true for agentmemory_forget function (matches toolName)', () => {
-      expect(tool.canHandle('agentmemory_forget')).toBe(true);
+    it('should return true for agentmemory_add_to_short_term function (matches toolName)', () => {
+      expect(tool.canHandle('agentmemory_add_to_short_term')).toBe(true);
     });
 
     it('should return false for other functions', () => {
@@ -52,14 +52,14 @@ describe('MemoryForgetTool', () => {
       expect(definition).toEqual({
         type: 'function',
         function: {
-          name: 'agentmemory_forget',
-          description: 'Remove a memory completely by ID',
+          name: 'agentmemory_add_to_short_term',
+          description: 'Add a memory to short-term storage (LRU management)',
           parameters: {
             type: 'object',
             properties: {
               id: {
                 type: 'string',
-                description: 'The memory ID to forget/delete'
+                description: 'Memory ID to add to short-term storage'
               }
             },
             required: ['id']
@@ -70,38 +70,38 @@ describe('MemoryForgetTool', () => {
   });
 
   describe('execute', () => {
-    it('should successfully forget a memory', async () => {
-      (mockMemoryRepository.forget as any).mockResolvedValue(true);
+    it('should successfully add memory to short-term storage', async () => {
+      (mockMemoryRepository.addToShortTermMemory as any).mockResolvedValue(true);
 
       const result = await tool.execute({
         id: 'mem-123'
       });
 
-      expect(mockMemoryRepository.forget).toHaveBeenCalledWith('mem-123');
+      expect(mockMemoryRepository.addToShortTermMemory).toHaveBeenCalledWith('mem-123');
       expect(result).toEqual({
         success: true,
-        message: 'Memory deleted successfully',
-        deletedId: 'mem-123'
+        message: 'Memory added to short-term storage',
+        memoryId: 'mem-123'
       });
     });
 
-    it('should handle memory not found', async () => {
-      (mockMemoryRepository.forget as any).mockResolvedValue(false);
+    it('should handle memory not found or already in short-term', async () => {
+      (mockMemoryRepository.addToShortTermMemory as any).mockResolvedValue(false);
 
       const result = await tool.execute({
-        id: 'nonexistent-id'
+        id: 'mem-123'
       });
 
-      expect(mockMemoryRepository.forget).toHaveBeenCalledWith('nonexistent-id');
+      expect(mockMemoryRepository.addToShortTermMemory).toHaveBeenCalledWith('mem-123');
       expect(result).toEqual({
         success: false,
-        message: 'Memory not found',
-        deletedId: 'nonexistent-id'
+        message: 'Memory not found or already in short-term',
+        memoryId: 'mem-123'
       });
     });
 
     it('should handle repository errors', async () => {
-      (mockMemoryRepository.forget as any).mockRejectedValue(new Error('Delete failed'));
+      (mockMemoryRepository.addToShortTermMemory as any).mockRejectedValue(new Error('Add failed'));
 
       const result = await tool.execute({
         id: 'mem-123'
@@ -109,7 +109,7 @@ describe('MemoryForgetTool', () => {
 
       expect(result).toEqual({
         success: false,
-        error: 'Delete failed'
+        error: 'Add failed'
       });
     });
 
@@ -124,7 +124,7 @@ describe('MemoryForgetTool', () => {
 
     it('should handle unknown errors', async () => {
        
-      (mockMemoryRepository.forget as any).mockRejectedValue('String error');
+      (mockMemoryRepository.addToShortTermMemory as any).mockRejectedValue('String error');
 
       const result = await tool.execute({
         id: 'mem-123'

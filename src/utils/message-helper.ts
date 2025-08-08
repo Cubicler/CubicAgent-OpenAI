@@ -28,8 +28,9 @@ export function buildOpenAIMessages(
     content: systemContent
   });
 
-  // Convert request messages to OpenAI format
-  for (const message of request.messages) {
+  // Convert request messages to OpenAI format (2.4: messages is optional)
+  const requestMessages = Array.isArray((request as any).messages) ? (request as any).messages : [];
+  for (const message of requestMessages) {
     // Skip messages with null content
     if (!message.content) {
       continue;
@@ -72,113 +73,42 @@ export function buildSystemMessage(
   iteration: number,
   memory?: MemoryRepository
 ): string {
-  let systemMessage = '';
+  let systemMessage = request.agent.prompt || '';
 
-  // Start with the agent's prompt from Cubicler dispatch
-  if (request.agent.prompt) {
-    systemMessage += request.agent.prompt;
-  }
-
-  // Add recent memory context if available
+  // Add memory context if available
   if (memory) {
-    systemMessage += `\n\n## Memory Management\nYou have access to a persistent memory system through function calls. Key functions include:
+    systemMessage += `\n\n## Memory Functions
+Use these for persistent context: agentmemory_remember, agentmemory_search, agentmemory_recall, agentmemory_get_short_term, agentmemory_forget, agentmemory_edit_content, agentmemory_edit_importance, agentmemory_add_tag, agentmemory_remove_tag, agentmemory_replace_tags.
+Store as complete sentences with tags. Use importance scores 0-1.`;
 
-**Storage & Retrieval:**
-- **agentmemory_remember**: Store important information as sentences with tags for future reference
-- **agentmemory_search**: Search for relevant past information using flexible criteria and filters
-- **agentmemory_recall**: Recall a specific memory by its ID
-- **agentmemory_get_short_term**: Get recent memories within token capacity for context
-- **agentmemory_forget**: Remove memories completely by ID (use with caution)
-
-**Memory Management:**
-- **agentmemory_add_to_short_term**: Add memories to short-term storage for immediate context
-- **agentmemory_edit_importance**: Update importance scores (0-1) for existing memories
-- **agentmemory_edit_content**: Update the content/sentence of existing memories
-- **agentmemory_add_tag**: Add tags to existing memories for better categorization
-- **agentmemory_remove_tag**: Remove tags from memories (cannot result in empty tags)
-- **agentmemory_replace_tags**: Replace all tags for a memory with new ones
-
-**Best Practices:**
-- Store information as clear, complete sentences (e.g., "John prefers direct communication")
-- Always include meaningful tags for categorization (required, cannot be empty)
-- Use importance scores (0-1) to prioritize critical information
-- Search and recall relevant context before responding to maintain continuity
-
-**Examples of what to store:**
-- User preferences and personal information
-- Important decisions or commitments made
-- Key facts about ongoing projects or topics
-- Previous conversations' important outcomes
-
-When to use memory:
-- Store information when users share personal details, preferences, or important facts
-- Search memory when users reference past conversations or ask about previous topics
-- Recall specific memories when users mention particular topics or IDs
-- Delete information when users correct previous statements or request removal
-
-Always use memory functions to maintain conversation continuity and provide personalized responses.`;
+    // Add recent memories if available
     try {
       const recentMemories = memory.getShortTermMemories();
-      if (recentMemories && recentMemories.length > 0) {
-        systemMessage += '\n\n## Recent Memory\nHere are some recent relevant memories that might help with the current conversation:\n\n';
-        
+      if (recentMemories?.length > 0) {
+        systemMessage += '\n\n## Recent Context\n';
         for (const memoryItem of recentMemories) {
           const tagsDisplay = memoryItem.tags.length > 0 ? ` [${memoryItem.tags.join(', ')}]` : '';
           systemMessage += `- ${memoryItem.sentence}${tagsDisplay}\n`;
         }
-        
-        systemMessage += '\nUse this information to provide more contextual and relevant responses.';
       }
     } catch (error) {
       console.warn('Failed to retrieve memory context:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
-  // Add message format instructions for group chat
-  systemMessage += `\n\nIMPORTANT: Messages from users will be in JSON format containing sender information:
-{
-  "senderId": "string", // the ID of the sender
-  "name": "string",     // the name of the sender  
-  "content": "string"   // the actual message content
-}
+  // Message format and limits (phrasing aligned with unit tests)
+  systemMessage += `\n\nIMPORTANT: Messages from users will be in JSON format with fields senderId, name, content. Always respond in plain text unless calling tools.`;
+  systemMessage += `\nThis is iteration ${iteration} of ${dispatchConfig.sessionMaxIteration}`;
+  systemMessage += `\nYou have a maximum of ${openaiConfig.sessionMaxTokens} tokens`;
+  if (request.tools && request.tools.length > 0) {
+    const remaining = Math.max(0, dispatchConfig.sessionMaxIteration - iteration);
+    systemMessage += `\nYou have ${remaining} remaining iterations to make tool calls`;
+  }
 
-When responding, always provide your final response as plain text (not JSON). Only use this JSON format to understand who sent each message.`;
-
-  // Add iteration context for tool calling limits
-  systemMessage += `\n\nThis is iteration ${iteration} of ${dispatchConfig.sessionMaxIteration} for this conversation session.`;
-  
-  // Add token limit information
-  systemMessage += `\nYou have a maximum of ${openaiConfig.sessionMaxTokens} tokens for your response.`;
-
-  // Add tool usage guidance if tools are available
-  if (request.tools.length > 0) {
-    const remainingIterations = dispatchConfig.sessionMaxIteration - iteration;
-    systemMessage += `\nYou have ${remainingIterations} remaining iterations to make tool calls if needed.`;
-    
-    // Check if summarizer tools are available (check for tools starting with 'summarize_')
-    const summarizerTools = request.tools.filter(tool => tool.name.startsWith('summarize_'));
-    if (summarizerTools.length > 0) {
-      systemMessage += `\n\n## Summarizer Tools Available\nYou have access to ${summarizerTools.length} summarizer tools that can execute other tools and provide AI-powered summaries of their results.
-
-**Available Summarizer Tools:**\n`;
-      
-      for (const tool of summarizerTools) {
-        const originalToolName = tool.name.replace('summarize_', '');
-        systemMessage += `- **${tool.name}**: Execute ${originalToolName} and summarize results based on your prompt\n`;
-      }
-      
-      systemMessage += `\n**How to use summarizer tools:**
-- Include a "_prompt" parameter with specific instructions for summarization
-- Example: "Focus on errors only", "Highlight key metrics", "Extract main findings"
-- All other parameters are passed directly to the original tool
-- The summarizer will execute the tool and provide a focused, relevant summary
-
-**When to use summarizers:**
-- When you need a focused view of tool results
-- To extract specific information from large datasets
-- To get insights tailored to the user's current question
-- To reduce information overload from verbose tool outputs`;
-    }
+  // Summarizer tools if available
+  const summarizerTools = request.tools.filter(tool => tool.name.startsWith('summarize_'));
+  if (summarizerTools.length > 0) {
+    systemMessage += `\nSummarizer tools available: ${summarizerTools.map(t => t.name).join(', ')}. Use _prompt parameter for focus.`;
   }
 
   return systemMessage;
