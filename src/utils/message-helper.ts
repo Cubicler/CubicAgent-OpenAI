@@ -28,8 +28,8 @@ export function buildOpenAIMessages(
     content: systemContent
   });
 
-  // Convert request messages to OpenAI format (2.4: messages is optional)
-  const requestMessages = Array.isArray((request as any).messages) ? (request as any).messages : [];
+  // Convert request messages to OpenAI format (messages is optional in AgentRequest)
+  const requestMessages = Array.isArray(request.messages) ? request.messages : [];
   for (const message of requestMessages) {
     // Skip messages with null content
     if (!message.content) {

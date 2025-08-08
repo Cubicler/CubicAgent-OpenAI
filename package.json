@@ -14,7 +14,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:integration": "vitest --run tests/integration",
-    "test:unit": "vitest --run tests/unit",
+    "test:unit": "vitest --run tests",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",

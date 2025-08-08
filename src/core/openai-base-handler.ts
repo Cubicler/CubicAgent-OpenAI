@@ -1,4 +1,4 @@
-import type { AgentClient, AgentRequest, AgentTool, RawAgentResponse } from '@cubicler/cubicagentkit';
+import type { AgentClient, AgentRequest, AgentTool, RawAgentResponse, JSONObject } from '@cubicler/cubicagentkit';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam, ChatCompletionMessageToolCall, ChatCompletionTool } from 'openai/resources/chat/completions.js';
@@ -128,6 +128,7 @@ export abstract class OpenAIBaseHandler {
     }));
 
     if (this.internalToolHandler) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       openAITools.push(...(this.internalToolHandler.buildTools() as any));
     }
 
@@ -189,7 +190,7 @@ export abstract class OpenAIBaseHandler {
   protected parseToolCallArguments(
     argumentsString: string,
     functionName: string
-  ): Record<string, any> {
+  ): JSONObject {
     try {
       return JSON.parse(argumentsString);
     } catch (error) {
