@@ -26,7 +26,13 @@ async function main() {
     console.log('Loading configuration and initializing OpenAI service...');
 
     // Create the OpenAI service from environment variables with CLI args override
-    const openaiService = await createOpenAIServiceFromEnv(cliArgs);
+    // If no transport specified via CLI or env vars, default to stdio for CLI usage
+    const hasAnyArgs = Object.keys(cliArgs).length > 0;
+    const finalCliArgs = hasAnyArgs && !cliArgs.transport && !process.env['TRANSPORT_MODE'] 
+      ? { ...cliArgs, transport: 'stdio' as const }
+      : cliArgs;
+    
+    const openaiService = await createOpenAIServiceFromEnv(finalCliArgs);
 
     // Start the service
     await openaiService.start();

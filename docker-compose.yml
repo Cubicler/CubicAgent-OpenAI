@@ -21,7 +21,8 @@ services:
       # System Configuration
       - LOG_LEVEL=${LOG_LEVEL:-info}
       
-      # Cubicler URL (required)
+      # Transport Configuration 
+      - TRANSPORT_MODE=${TRANSPORT_MODE:-http}
       - CUBICLER_URL=${CUBICLER_URL:-http://localhost:8080}
     healthcheck:
       test: ["CMD", "sh", "-c", "curl -f http://localhost:${AGENT_PORT:-3000}/ || nc -z localhost ${AGENT_PORT:-3000}"]

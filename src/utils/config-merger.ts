@@ -20,8 +20,9 @@ export function mergeConfigWithArgs(baseConfig: Config, args: CLIArgs): Config {
     },
     transport: {
       ...baseConfig.transport,
-      // Default to stdio for CLI usage
-      mode: args.transport || 'stdio',
+      // Only override transport mode if explicitly provided via CLI
+      // Otherwise respect environment variables (important for Docker)
+      ...(args.transport && { mode: args.transport }),
       ...(args.cubiclerUrl && { cubiclerUrl: args.cubiclerUrl }),
       ...(args.sseUrl && { sseUrl: args.sseUrl }),
       ...(args.agentId && { agentId: args.agentId }),

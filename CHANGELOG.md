@@ -4,6 +4,52 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-08-09
+
+### Added
+
+- **Comprehensive CLI argument support** - New command-line interface with extensive configuration options
+  - OpenAI configuration: `--model`, `--temperature`, `--max-tokens`, `--api-key`, `--base-url`, `--timeout`, `--max-retries`, `--summarizer-model`
+  - Transport configuration: `--transport`, `--cubicler-url`, `--sse-url`, `--agent-id`
+  - Memory configuration: `--memory-db-path`, `--memory-max-tokens`
+  - Dispatch configuration: `--session-max-iteration`, `--agent-port`
+  - JWT configuration: `--jwt`, `--jwt-type`, `--jwt-token`
+  - Help and version: `--help`, `--version`
+- **Config merger utility** (`src/utils/config-merger.ts`) - Allows CLI arguments to override environment variables
+- **CLI argument parser** (`src/utils/cli-args.ts`) - Robust command-line argument parsing with validation
+- **MCP-style stdio usage examples** - Documentation for using as stdio agent spawned by Cubicler
+- **Release notes documentation** (`release-notes.md`) - Comprehensive release documentation
+
+### Changed
+
+- **Simplified stdio transport** - Removed complex `STDIO_COMMAND`, `STDIO_ARGS`, and `STDIO_CWD` configuration
+- **Updated CubicAgentKit dependency** to v2.5.0 for latest features and improvements
+- **Enhanced main entry point** to support CLI argument parsing and merging with environment config
+- **Standardized documentation** - Unified repository guidelines across `.github/copilot-instructions.md`, `CLAUDE.md`, and README
+- **Updated CLI examples** - New usage patterns for MCP-style agent deployment
+- **Default transport mode** - CLI usage defaults to `stdio` for better MCP compatibility
+
+### Fixed
+
+- **Removed deprecated stdio configuration** from environment schema and validation
+- **Updated factory functions** to properly handle simplified stdio transport
+- **Fixed test expectations** for simplified stdio transport (removed command/args validation)
+
+### Documentation
+
+- **Enhanced README** - Updated CLI usage section with comprehensive examples
+- **Improved .env.example** - Simplified stdio transport documentation
+- **Repository guidelines** - Consistent development standards across all documentation files
+
+### Dependencies
+
+- Upgraded `@cubicler/cubicagentkit` from `^2.4.0` to `^2.5.0`
+
+### Breaking Changes
+
+- **Stdio transport configuration** - `STDIO_COMMAND`, `STDIO_ARGS`, and `STDIO_CWD` environment variables are no longer supported
+- Stdio agents now use parameter-less initialization for better MCP compatibility
+
 ## [2.4.0] - 2025-08-08
 
 ### Added
@@ -30,4 +76,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Prior versions included OpenAI service creation via environment variables, memory tools, summarizer tools, and JWT support.
 
+[2.5.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.5.0
 [2.4.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.4.0
