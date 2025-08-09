@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.2] - 2025-08-09
+
+### Fixed
+
+- **Library Compatibility** - Replaced TypeScript path aliases (`@/*`) with relative imports for better library compatibility
+  - Updated all source files to use relative imports instead of path aliases
+  - Ensures proper module resolution when package is consumed as a dependency
+  - Maintains full functionality while improving compatibility with different build systems
+  - No breaking changes to public API
+
+### Notes
+
+- **Zero Breaking Changes** - All existing APIs remain fully compatible
+- **Enhanced Compatibility** - Better support for various build systems and module bundlers
+- **Library Usage** - Improved experience when using as a dependency in other projects
+
 ## [2.6.1] - 2025-08-09
 
 ### Added
@@ -159,6 +175,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Prior versions included OpenAI service creation via environment variables, memory tools, summarizer tools, and JWT support.
 
+[2.6.2]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.2
 [2.6.1]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.1
 [2.6.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.0
 [2.5.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.5.0
