@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.3] - 2025-08-09
+
+### Updated
+
+- **Dependencies Update** - Updated dependencies to latest versions
+  - Upgraded `@cubicler/cubicagentkit` from `^2.6.1` to `^2.6.2`
+  - Updated `pino` from `^9.3.2` to `^9.8.0`
+  - Updated `package-lock.json` to reflect latest dependency versions
+
+### Notes
+
+- **Maintenance Release** - Focus on keeping dependencies current and secure
+- **Zero Breaking Changes** - All existing APIs remain fully compatible
+- **Enhanced Stability** - Latest dependency versions provide improved reliability
+
 ## [2.6.2] - 2025-08-09
 
 ### Fixed
@@ -175,6 +190,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Prior versions included OpenAI service creation via environment variables, memory tools, summarizer tools, and JWT support.
 
+[2.6.3]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.3
 [2.6.2]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.2
 [2.6.1]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.1
 [2.6.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.0

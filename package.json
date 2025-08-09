@@ -1,7 +1,7 @@
 {
   "name": "@cubicler/cubicagent-openai",
-  "version": "2.6.2",
-  "description": "Ready-to-deploy OpenAI agent application that integrates OpenAI's language models with Cubicler 2.6.x using CubicAgentKit 2.6.1",
+  "version": "2.6.3",
+  "description": "Ready-to-deploy OpenAI agent application that integrates OpenAI's language models with Cubicler 2.6.x using CubicAgentKit 2.6.2",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -40,10 +40,10 @@
     "url": "https://github.com/Cubicler/CubicAgent-OpenAI.git"
   },
   "dependencies": {
-    "@cubicler/cubicagentkit": "^2.6.1",
+    "@cubicler/cubicagentkit": "^2.6.2",
     "dotenv": "^16.4.5",
     "openai": "^4.63.0",
-    "pino": "^9.3.2",
+    "pino": "^9.8.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
