@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 import type { DispatchConfig, OpenAIConfig } from '../config/environment.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 import { OpenAIBaseHandler } from './openai-base-handler.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 import type { OpenAIMessageHandling } from '../models/interfaces.js';
 
 export class OpenAIMessageHandler extends OpenAIBaseHandler implements OpenAIMessageHandling {
@@ -12,9 +14,10 @@ export class OpenAIMessageHandler extends OpenAIBaseHandler implements OpenAIMes
     openai: OpenAI,
     openaiConfig: OpenAIConfig,
     dispatchConfig: DispatchConfig,
-    internalToolHandler?: InternalToolHandling
+    internalToolHandler: InternalToolHandling | undefined,
+    logger?: Logger
   ) {
-    super(openai, openaiConfig, dispatchConfig, internalToolHandler);
+    super(openai, openaiConfig, dispatchConfig, logger ?? createLogger({ silent: true }), internalToolHandler);
   }
 
   async handleMessage(
@@ -25,4 +28,3 @@ export class OpenAIMessageHandler extends OpenAIBaseHandler implements OpenAIMes
     return this.executeIterativeLoop(request, client, context?.memory);
   }
 }
-

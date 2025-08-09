@@ -8,23 +8,28 @@ import type { InternalToolHandling } from '../internal-tools/internal-tool-handl
 import type { OpenAIRequestParams, OpenAIResponse, ProcessToolCallsResult, SessionState, ToolExecutionResult } from '../models/types.js';
 import { InternalToolAggregator } from './internal-tool-aggregator.js';
 import { createSummarizerTools } from '../internal-tools/summarizer/summarizer-tool.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 
 export abstract class OpenAIBaseHandler {
   protected readonly openai: OpenAI;
   protected readonly openaiConfig: OpenAIConfig;
   protected readonly dispatchConfig: DispatchConfig;
   protected readonly internalToolHandler: InternalToolHandling | undefined;
+  protected readonly logger: Logger;
 
   constructor(
     openai: OpenAI,
     openaiConfig: OpenAIConfig,
     dispatchConfig: DispatchConfig,
+    logger?: Logger,
     internalToolHandler?: InternalToolHandling
   ) {
     this.openai = openai;
     this.openaiConfig = openaiConfig;
     this.dispatchConfig = dispatchConfig;
     this.internalToolHandler = internalToolHandler;
+    this.logger = logger ?? createLogger({ silent: true });
   }
 
   protected async executeIterativeLoop(
@@ -49,7 +54,7 @@ export abstract class OpenAIBaseHandler {
         sessionState.currentTools = updatedState.tools;
         sessionState.iteration++;
       } else {
-        const cleanedContent = cleanFinalResponse(result.content);
+        const cleanedContent = cleanFinalResponse(result.content, this.logger);
         return {
           type: 'text' as const,
           content: cleanedContent,
@@ -64,7 +69,7 @@ export abstract class OpenAIBaseHandler {
   protected initializeSession(request: AgentRequest, memory?: MemoryRepository): SessionState {
     return {
       iteration: 1,
-      currentMessages: buildOpenAIMessages(request, this.openaiConfig, this.dispatchConfig, 1, memory),
+      currentMessages: buildOpenAIMessages(request, this.openaiConfig, this.dispatchConfig, 1, memory, this.logger),
       currentTools: this.buildOpenAITools(request.tools),
       totalUsedTokens: 0,
     };
@@ -88,7 +93,7 @@ export abstract class OpenAIBaseHandler {
     iteration: number,
     memory?: MemoryRepository
   ): string {
-    return buildSystemMessage(request, this.openaiConfig, this.dispatchConfig, iteration, memory);
+    return buildSystemMessage(request, this.openaiConfig, this.dispatchConfig, iteration, memory, this.logger);
   }
 
   protected async processToolCallsAndContinue(
@@ -226,7 +231,8 @@ export abstract class OpenAIBaseHandler {
           serverToolsResponse.tools,
           this.openaiConfig.summarizerModel,
           this.openaiConfig.apiKey,
-          client
+          client,
+          this.logger
         );
 
         const aggregator = this.internalToolHandler as InternalToolAggregator;

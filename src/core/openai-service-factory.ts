@@ -23,6 +23,8 @@ import { OpenAIService } from './openai-service.js';
 import OpenAI from 'openai';
 import { OpenAIMessageHandler } from './openai-message-handler.js';
 import { OpenAITriggerHandler } from './openai-trigger-handler.js';
+import { createLogger } from '@/utils/pino-logger.js';
+import type { Logger } from '@/utils/logger.interface.js';
 
 // Import all memory tools for default injection
 import { MemoryRememberTool } from '../internal-tools/memory/memory-remember-tool.js';
@@ -47,14 +49,17 @@ export async function createOpenAIServiceFromEnv(cliArgs?: CLIArgs): Promise<Ope
   const config = cliArgs ? mergeConfigWithArgs(baseConfig, cliArgs) : baseConfig;
   const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig, jwt: jwtConfig } = config;
 
+  // Per-instance logger: silence when using stdio transport
+  const logger = createLogger({ silent: transportConfig.mode === 'stdio' });
+
   // Initialize memory if configured
-  const memory = await initializeMemory(memoryConfig);
+  const memory = await initializeMemory(memoryConfig, logger);
 
   // Create internal tool aggregator with memory tools if memory is available
-  const internalToolHandler = createInternalToolHandler(memory, openaiConfig.apiKey, openaiConfig.summarizerModel);
+  const internalToolHandler = createInternalToolHandler(memory, logger, openaiConfig.apiKey, openaiConfig.summarizerModel);
 
   // Initialize client and CubicAgent based on transport mode
-  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
+  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory, logger);
 
   // Initialize OpenAI client and handlers
   const openai = new OpenAI({
@@ -66,10 +71,10 @@ export async function createOpenAIServiceFromEnv(cliArgs?: CLIArgs): Promise<Ope
     maxRetries: openaiConfig.maxRetries,
   });
 
-  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
-  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
 
-  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler, logger);
 }
 
 /**
@@ -79,14 +84,16 @@ export async function createOpenAIServiceFromEnv(cliArgs?: CLIArgs): Promise<Ope
 export async function createOpenAIServiceFromConfig(config: Config): Promise<OpenAIService> {
   const { openai: openaiConfig, dispatch: dispatchConfig, transport: transportConfig, memory: memoryConfig, jwt: jwtConfig } = config;
 
+  const logger = createLogger({ silent: transportConfig.mode === 'stdio' });
+
   // Initialize memory if configured
-  const memory = await initializeMemory(memoryConfig);
+  const memory = await initializeMemory(memoryConfig, logger);
 
   // Create internal tool aggregator with memory tools if memory is available
-  const internalToolHandler = createInternalToolHandler(memory, openaiConfig.apiKey, openaiConfig.summarizerModel);
+  const internalToolHandler = createInternalToolHandler(memory, logger, openaiConfig.apiKey, openaiConfig.summarizerModel);
 
   // Initialize client and CubicAgent based on transport mode
-  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
+  const cubicAgent = await createCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory, logger);
 
   // Initialize OpenAI client and handlers
   const openai = new OpenAI({
@@ -98,10 +105,10 @@ export async function createOpenAIServiceFromConfig(config: Config): Promise<Ope
     maxRetries: openaiConfig.maxRetries,
   });
 
-  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
-  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
 
-  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler, logger);
 }
 
 /**
@@ -113,10 +120,12 @@ export function createOpenAIServiceWithMemory(
   agentServer: AgentServer,
   memory: MemoryRepository,
   openaiConfig: OpenAIConfig,
-  dispatchConfig: DispatchConfig
+  dispatchConfig: DispatchConfig,
+  logger?: Logger
 ): OpenAIService {
+  logger = logger ?? createLogger({});
   const cubicAgent = new CubicAgent(agentClient, agentServer, memory);
-  const internalToolHandler = createInternalToolHandler(memory, openaiConfig.apiKey, openaiConfig.summarizerModel);
+  const internalToolHandler = createInternalToolHandler(memory, logger, openaiConfig.apiKey, openaiConfig.summarizerModel);
 
   const openai = new OpenAI({
     apiKey: openaiConfig.apiKey,
@@ -127,10 +136,10 @@ export function createOpenAIServiceWithMemory(
     maxRetries: openaiConfig.maxRetries,
   });
 
-  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
-  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
 
-  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler, logger);
 }
 
 /**
@@ -140,8 +149,10 @@ export function createOpenAIServiceBasic(
   agentClient: AgentClient,
   agentServer: AgentServer,
   openaiConfig: OpenAIConfig,
-  dispatchConfig: DispatchConfig
+  dispatchConfig: DispatchConfig,
+  logger?: Logger
 ): OpenAIService {
+  logger = logger ?? createLogger({});
   const cubicAgent = new CubicAgent(agentClient, agentServer, undefined);
   const internalToolHandler = undefined; // No memory -> no internal memory tools
 
@@ -154,16 +165,16 @@ export function createOpenAIServiceBasic(
     maxRetries: openaiConfig.maxRetries,
   });
 
-  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
-  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler);
+  const messageHandler = new OpenAIMessageHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
+  const triggerHandler = new OpenAITriggerHandler(openai, openaiConfig, dispatchConfig, internalToolHandler, logger);
 
-  return new OpenAIService(cubicAgent, messageHandler, triggerHandler);
+  return new OpenAIService(cubicAgent, messageHandler, triggerHandler, logger);
 }
 
 /**
  * Initialize memory repository if configured
  */
-async function initializeMemory(memoryConfig: MemoryConfig): Promise<MemoryRepository | undefined> {
+async function initializeMemory(memoryConfig: MemoryConfig, logger: Logger): Promise<MemoryRepository | undefined> {
   if (!memoryConfig.enabled) {
     return undefined;
   }
@@ -180,14 +191,14 @@ async function initializeMemory(memoryConfig: MemoryConfig): Promise<MemoryRepos
           memoryConfig.defaultImportance
         );
     
-    console.log(`💾 Memory enabled: ${memoryConfig.type} (${memoryConfig.maxTokens} tokens)`);
+    logger.info(`💾 Memory enabled: ${memoryConfig.type} (${memoryConfig.maxTokens} tokens)`);
     
     // Initialize short-term memory with important memories on first load
-    await initializeShortTermMemoryOnFirstLoad(memory, memoryConfig.maxTokens);
+    await initializeShortTermMemoryOnFirstLoad(memory, memoryConfig.maxTokens, logger);
     
     return memory;
   } catch (error) {
-    console.warn(`⚠️ Memory initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.warn(`⚠️ Memory initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return undefined;
   }
 }
@@ -197,6 +208,7 @@ async function initializeMemory(memoryConfig: MemoryConfig): Promise<MemoryRepos
  */
 function createInternalToolHandler(
   memory: MemoryRepository | undefined, 
+  logger: Logger,
   openaiApiKey?: string, 
   summarizerModel?: string
 ): InternalToolHandling | undefined {
@@ -206,17 +218,17 @@ function createInternalToolHandler(
 
   // Create original memory tools
   const originalMemoryTools = [
-    new MemoryRememberTool(memory),
-    new MemoryRecallTool(memory),
-    new MemorySearchTool(memory),
-    new MemoryForgetTool(memory),
-    new MemoryGetShortTermTool(memory),
-    new MemoryAddToShortTermTool(memory),
-    new MemoryEditImportanceTool(memory),
-    new MemoryEditContentTool(memory),
-    new MemoryAddTagTool(memory),
-    new MemoryRemoveTagTool(memory),
-    new MemoryReplaceTagsTool(memory)
+    new MemoryRememberTool(memory, logger),
+    new MemoryRecallTool(memory, logger),
+    new MemorySearchTool(memory, logger),
+    new MemoryForgetTool(memory, logger),
+    new MemoryGetShortTermTool(memory, logger),
+    new MemoryAddToShortTermTool(memory, logger),
+    new MemoryEditImportanceTool(memory, logger),
+    new MemoryEditContentTool(memory, logger),
+    new MemoryAddTagTool(memory, logger),
+    new MemoryRemoveTagTool(memory, logger),
+    new MemoryReplaceTagsTool(memory, logger)
   ];
 
   // Collect all tools (original + summarized versions)
@@ -227,15 +239,15 @@ function createInternalToolHandler(
   if (enableSummarization && summarizerModel && openaiApiKey) {
     // Create summarized versions for memory tools that benefit from summarization
     const summarizedTools = [
-      new SummarizerInternalTool(new MemoryRecallTool(memory), summarizerModel, openaiApiKey),
-      new SummarizerInternalTool(new MemorySearchTool(memory), summarizerModel, openaiApiKey),
-      new SummarizerInternalTool(new MemoryGetShortTermTool(memory), summarizerModel, openaiApiKey)
+      new SummarizerInternalTool(new MemoryRecallTool(memory, logger), summarizerModel, openaiApiKey, logger),
+      new SummarizerInternalTool(new MemorySearchTool(memory, logger), summarizerModel, openaiApiKey, logger),
+      new SummarizerInternalTool(new MemoryGetShortTermTool(memory, logger), summarizerModel, openaiApiKey, logger)
     ];
 
     allTools.push(...summarizedTools);
-    console.log(`🔧 Internal tools enabled: ${originalMemoryTools.length} memory tools + ${summarizedTools.length} summarized versions`);
+    logger.info(`🔧 Internal tools enabled: ${originalMemoryTools.length} memory tools + ${summarizedTools.length} summarized versions`);
   } else {
-    console.log(`🔧 Internal tools enabled: ${originalMemoryTools.length} memory tools`);
+    logger.info(`🔧 Internal tools enabled: ${originalMemoryTools.length} memory tools`);
   }
   
   return new InternalToolAggregator(allTools);
@@ -248,14 +260,15 @@ async function createCubicAgent(
   transportConfig: TransportConfig, 
   dispatchConfig: DispatchConfig, 
   jwtConfig: JWTConfig,
-  memory: MemoryRepository | undefined
+  memory: MemoryRepository | undefined,
+  logger: Logger
 ): Promise<CubicAgent> {
   if (transportConfig.mode === 'stdio') {
-    return createStdioCubicAgent(transportConfig, memory);
+    return createStdioCubicAgent(transportConfig, memory, logger);
   } else if (transportConfig.mode === 'sse') {
-    return createSSECubicAgent(transportConfig, jwtConfig, memory);
+    return createSSECubicAgent(transportConfig, jwtConfig, memory, logger);
   } else {
-    return createHttpCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory);
+    return createHttpCubicAgent(transportConfig, dispatchConfig, jwtConfig, memory, logger);
   }
 }
 
@@ -264,13 +277,14 @@ async function createCubicAgent(
  */
 function createStdioCubicAgent(
   transportConfig: TransportConfig,
-  memory: MemoryRepository | undefined
+  memory: MemoryRepository | undefined,
+  logger: Logger
 ): CubicAgent {
   const client = new StdioAgentClient();
   const server = new StdioAgentServer();
   const cubicAgent = new CubicAgent(client, server, memory);
   
-  console.log(`🚀 OpenAI ready - ${transportConfig.mode} transport - stdio`);
+  logger.info(`🚀 OpenAI ready - ${transportConfig.mode} transport - stdio`);
   
   return cubicAgent;
 }
@@ -282,7 +296,8 @@ function createHttpCubicAgent(
   transportConfig: TransportConfig,
   dispatchConfig: DispatchConfig,
   jwtConfig: JWTConfig,
-  memory: MemoryRepository | undefined
+  memory: MemoryRepository | undefined,
+  logger: Logger
 ): CubicAgent {
   if (!transportConfig.cubiclerUrl) {
     throw new Error('CUBICLER_URL is required for HTTP transport mode');
@@ -293,10 +308,10 @@ function createHttpCubicAgent(
   
   // Configure JWT auth for client if enabled
   if (jwtConfig.enabled) {
-    const authConfig = createJWTAuthConfig(jwtConfig);
+    const authConfig = createJWTAuthConfig(jwtConfig, logger);
     if (authConfig) {
       client.useJWTAuth(authConfig);
-      console.log(`🔐 JWT auth enabled for client: ${jwtConfig.type}`);
+      logger.info(`🔐 JWT auth enabled for client: ${jwtConfig.type}`);
     }
   }
 
@@ -308,13 +323,13 @@ function createHttpCubicAgent(
     const middlewareConfig = createJWTMiddlewareConfig(jwtConfig);
     if (middlewareConfig) {
       server.useJWTAuth(middlewareConfig);
-      console.log(`🔐 JWT middleware enabled for server`);
+      logger.info(`🔐 JWT middleware enabled for server`);
     }
   }
 
   const cubicAgent = new CubicAgent(client, server, memory);
   
-  console.log(`🚀 OpenAI ready - ${transportConfig.mode} transport - ${dispatchConfig.agentPort}`);
+  logger.info(`🚀 OpenAI ready - ${transportConfig.mode} transport - ${dispatchConfig.agentPort}`);
   
   return cubicAgent;
 }
@@ -325,7 +340,8 @@ function createHttpCubicAgent(
 function createSSECubicAgent(
   transportConfig: TransportConfig,
   jwtConfig: JWTConfig,
-  memory: MemoryRepository | undefined
+  memory: MemoryRepository | undefined,
+  logger: Logger
 ): CubicAgent {
   if (!transportConfig.sseUrl) {
     throw new Error('SSE_URL is required for SSE transport mode');
@@ -340,10 +356,10 @@ function createSSECubicAgent(
   
   // Configure JWT auth for client if enabled
   if (jwtConfig.enabled) {
-    const authConfig = createJWTAuthConfig(jwtConfig);
+    const authConfig = createJWTAuthConfig(jwtConfig, logger);
     if (authConfig) {
       client.useJWTAuth(authConfig);
-      console.log(`🔐 JWT auth enabled for SSE client: ${jwtConfig.type}`);
+      logger.info(`🔐 JWT auth enabled for SSE client: ${jwtConfig.type}`);
     }
   }
 
@@ -352,7 +368,7 @@ function createSSECubicAgent(
   
   const cubicAgent = new CubicAgent(client, server, memory);
   
-  console.log(`⚡ OpenAI ready - ${transportConfig.mode} transport - SSE connected to ${transportConfig.sseUrl}`);
+  logger.info(`⚡ OpenAI ready - ${transportConfig.mode} transport - SSE connected to ${transportConfig.sseUrl}`);
   
   return cubicAgent;
 }
@@ -360,14 +376,14 @@ function createSSECubicAgent(
 /**
  * Create JWT auth configuration for the client from environment settings
  */
-function createJWTAuthConfig(jwtConfig: JWTConfig): JWTAuthConfig | null {
+function createJWTAuthConfig(jwtConfig: JWTConfig, logger: Logger): JWTAuthConfig | null {
   if (!jwtConfig.enabled) {
     return null;
   }
 
   if (jwtConfig.type === 'static') {
     if (!jwtConfig.token) {
-      console.warn('⚠️ JWT_TOKEN is required for static JWT authentication');
+      logger.warn('⚠️ JWT_TOKEN is required for static JWT authentication');
       return null;
     }
     return {
@@ -376,7 +392,7 @@ function createJWTAuthConfig(jwtConfig: JWTConfig): JWTAuthConfig | null {
     };
   } else {
     if (!jwtConfig.clientId || !jwtConfig.clientSecret || !jwtConfig.tokenEndpoint) {
-      console.warn('⚠️ JWT_CLIENT_ID, JWT_CLIENT_SECRET, and JWT_TOKEN_ENDPOINT are required for OAuth JWT authentication');
+      logger.warn('⚠️ JWT_CLIENT_ID, JWT_CLIENT_SECRET, and JWT_TOKEN_ENDPOINT are required for OAuth JWT authentication');
       return null;
     }
     

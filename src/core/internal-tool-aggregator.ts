@@ -2,6 +2,8 @@ import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
 import type { JSONValue } from '../config/types.js';
 import type { InternalTool, InternalToolResult } from '../internal-tools/internal-tool.interface.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 
 /**
  * InternalToolAggregator - Generic aggregator for internal tools
@@ -14,9 +16,11 @@ import type { InternalToolHandling } from '../internal-tools/internal-tool-handl
  */
 export class InternalToolAggregator implements InternalToolHandling {
   private readonly tools: InternalTool[];
+  private readonly logger: Logger;
 
-  constructor(tools: InternalTool[]) {
+  constructor(tools: InternalTool[], logger?: Logger) {
     this.tools = tools;
+    this.logger = logger ?? createLogger({ silent: true });
   }
 
   /**
@@ -54,7 +58,7 @@ export class InternalToolAggregator implements InternalToolHandling {
       // Execute the function using the appropriate tool
       return await tool.execute(parameters);
     } catch (error) {
-      console.error(`❌ Tool execution failed for ${functionName}:`, error);
+      this.logger.error(`❌ Tool execution failed for ${functionName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

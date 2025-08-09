@@ -23,30 +23,35 @@ async function main() {
       return;
     }
 
-    console.log('Loading configuration and initializing OpenAI service...');
-
     // Create the OpenAI service from environment variables with CLI args override
     // If no transport specified via CLI or env vars, default to stdio for CLI usage
     const hasAnyArgs = Object.keys(cliArgs).length > 0;
     const finalCliArgs = hasAnyArgs && !cliArgs.transport && !process.env['TRANSPORT_MODE'] 
       ? { ...cliArgs, transport: 'stdio' as const }
       : cliArgs;
+
+    const isStdio = (finalCliArgs.transport === 'stdio') || process.env['TRANSPORT_MODE'] === 'stdio';
+    if (!isStdio) {
+      console.log('Loading configuration and initializing OpenAI service...');
+    }
     
     const openaiService = await createOpenAIServiceFromEnv(finalCliArgs);
 
     // Start the service
     await openaiService.start();
     
-    console.log('CubicAgent-OpenAI started successfully');
+    if (!isStdio) {
+      console.log('CubicAgent-OpenAI started successfully');
+    }
 
     // Handle graceful shutdown
     process.on('SIGINT', async () => {
-      console.log('Received SIGINT, shutting down gracefully...');
+      if (!isStdio) console.log('Received SIGINT, shutting down gracefully...');
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
-      console.log('Received SIGTERM, shutting down gracefully...');
+      if (!isStdio) console.log('Received SIGTERM, shutting down gracefully...');
       process.exit(0);
     });
 

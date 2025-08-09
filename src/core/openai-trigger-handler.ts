@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 import type { DispatchConfig, OpenAIConfig } from '../config/environment.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 import { OpenAIBaseHandler } from './openai-base-handler.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 import type { OpenAITriggerHandling } from '../models/interfaces.js';
 
 export class OpenAITriggerHandler extends OpenAIBaseHandler implements OpenAITriggerHandling {
@@ -12,9 +14,10 @@ export class OpenAITriggerHandler extends OpenAIBaseHandler implements OpenAITri
     openai: OpenAI,
     openaiConfig: OpenAIConfig,
     dispatchConfig: DispatchConfig,
-    internalToolHandler?: InternalToolHandling
+    internalToolHandler: InternalToolHandling | undefined,
+    logger?: Logger
   ) {
-    super(openai, openaiConfig, dispatchConfig, internalToolHandler);
+    super(openai, openaiConfig, dispatchConfig, logger ?? createLogger({ silent: true }), internalToolHandler);
   }
 
   protected override buildSystemContent(request: TriggerRequest, iteration: number, memory?: MemoryRepository): string {

@@ -1,6 +1,8 @@
 import { CubicAgent } from '@cubicler/cubicagentkit';
 import type { AgentRequest, AgentResponse } from '@cubicler/cubicagentkit';
 import type { OpenAITriggerHandling, OpenAIMessageHandling } from '../models/interfaces.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 
 /**
  * OpenAIService
@@ -20,15 +22,18 @@ export class OpenAIService {
   private cubicAgent: CubicAgent;
   private messageHandler: OpenAIMessageHandling;
   private triggerHandler: OpenAITriggerHandling;
+  private logger: Logger;
 
   constructor(
     cubicAgent: CubicAgent,
     messageHandler: OpenAIMessageHandling,
-    triggerHandler: OpenAITriggerHandling
+    triggerHandler: OpenAITriggerHandling,
+    logger?: Logger
   ) {
     this.cubicAgent = cubicAgent;
     this.messageHandler = messageHandler;
     this.triggerHandler = triggerHandler;
+    this.logger = logger ?? createLogger({ silent: true });
   }
 
   /**
@@ -41,12 +46,12 @@ export class OpenAIService {
         const agentName = request.agent?.name || 'Unknown Agent';
         const toolsCount = request.tools?.length || 0;
         const messagesCount = request.messages?.length || 0;
-        console.log(`📨 ${agentName} | ${toolsCount} tools | ${messagesCount} msgs`);
+        this.logger.info(`📨 ${agentName} | ${toolsCount} tools | ${messagesCount} msgs`);
         try {
           const ctx = context.memory ? { memory: context.memory } : undefined;
           return await this.messageHandler.handleMessage(request, client, ctx);
         } catch (error) {
-          console.error(`❌ Message handler failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          this.logger.error(`❌ Message handler failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
           return { type: 'text' as const, content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, usedToken: 0 };
         }
       })
@@ -54,12 +59,12 @@ export class OpenAIService {
         const agentName = request.agent?.name || 'Unknown Agent';
         const toolsCount = request.tools?.length || 0;
         const triggerName = request.trigger?.identifier || 'unknown';
-        console.log(`🪝 ${agentName} | ${toolsCount} tools | trigger: ${triggerName}`);
+        this.logger.info(`🪝 ${agentName} | ${toolsCount} tools | trigger: ${triggerName}`);
         try {
           const ctx = context.memory ? { memory: context.memory } : undefined;
           return await this.triggerHandler.handleWebhook(request, client, ctx);
         } catch (error) {
-          console.error(`❌ Trigger handler failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          this.logger.error(`❌ Trigger handler failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
           return { type: 'text' as const, content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`, usedToken: 0 };
         }
       })
