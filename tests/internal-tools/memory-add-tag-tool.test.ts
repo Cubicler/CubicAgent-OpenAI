@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '../../src/utils/logger.interface.js';
 import { MemoryAddTagTool } from '../../src/internal-tools/memory/memory-add-tag-tool.js';
 
 describe('MemoryAddTagTool', () => {
   let mockMemoryRepository: MemoryRepository;
+  let mockLogger: Logger;
   let tool: MemoryAddTagTool;
 
   beforeEach(() => {
@@ -21,7 +23,14 @@ describe('MemoryAddTagTool', () => {
       forget: vi.fn()
     } as MemoryRepository;
 
-    tool = new MemoryAddTagTool(mockMemoryRepository);
+    mockLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
+    } as Logger;
+
+    tool = new MemoryAddTagTool(mockMemoryRepository, mockLogger);
   });
 
   describe('toolName', () => {

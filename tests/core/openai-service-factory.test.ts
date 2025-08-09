@@ -305,9 +305,8 @@ describe('OpenAI Service Factory', () => {
       const service = await createOpenAIServiceFromEnv();
 
       expect(service).toBeInstanceOf(OpenAIService);
-      expect(mockConsoleLog).toHaveBeenCalledWith(
-        '🚀 OpenAI ready - stdio transport - stdio'
-      );
+      // In stdio mode, logger is silent to avoid polluting stdio
+      expect(mockConsoleLog).not.toHaveBeenCalled();
     });
 
   });
