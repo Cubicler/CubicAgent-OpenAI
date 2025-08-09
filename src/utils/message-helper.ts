@@ -45,16 +45,46 @@ export function buildOpenAIMessages(
         content: message.content
       });
     } else {
-      // Format user messages with sender information in JSON format
-      const messageWithSender = {
+      // User messages: support text and image content
+      const senderName = message.sender.name || 'Unknown';
+
+      // Build a compact JSON envelope for the text part
+      const isImage = message.type === 'image';
+      const envelope = {
         senderId: message.sender.id,
-        name: message.sender.name || 'Unknown',
-        content: message.content
-      };
-      
+        name: senderName,
+        // Avoid dumping base64 into the text envelope
+        content:
+          isImage && message.metadata?.format === 'base64'
+            ? '<base64 image omitted>'
+            : message.content,
+        type: message.type || 'text',
+      } as const;
+
+      if (isImage) {
+        const imageUrl = buildImageUrlFromMessageContent(
+          message.content,
+          message.metadata?.format,
+          message.metadata?.fileExtension
+        );
+
+        if (imageUrl) {
+          messages.push({
+            role: 'user',
+            // Mixed content: first a text part with sender info, then the image
+            content: [
+              { type: 'text', text: JSON.stringify(envelope) },
+              { type: 'image_url', image_url: { url: imageUrl } },
+            ],
+          });
+          continue;
+        }
+        // Fallback to plain text if we couldn't build an image URL
+      }
+
       messages.push({
         role: 'user',
-        content: JSON.stringify(messageWithSender)
+        content: JSON.stringify(envelope),
       });
     }
     // Note: tool messages will be handled separately during function calling
@@ -178,4 +208,51 @@ function tryExtractJsonContent(content: string, logger?: Logger): string | null 
  */
 function isObjectWithContentField(parsed: unknown): parsed is { content: unknown } {
   return typeof parsed === 'object' && parsed !== null && 'content' in parsed;
+}
+
+/**
+ * Build an image URL suitable for OpenAI chat.completions image parts.
+ * - For 'url' format, returns the original URL
+ * - For 'base64' format, returns a data URL with inferred MIME from file extension
+ */
+function buildImageUrlFromMessageContent(
+  content: string,
+  format?: 'base64' | 'url',
+  fileExtension?: string
+): string | null {
+  if (!content) return null;
+  if (format === 'url') {
+    return content;
+  }
+  if (format === 'base64') {
+    const mime = inferMimeType(fileExtension);
+    return `data:${mime};base64,${content}`;
+  }
+  // Heuristic: if it looks like a URL, pass it through
+  if (/^https?:\/\//i.test(content)) return content;
+  return null;
+}
+
+function inferMimeType(ext?: string): string {
+  const e = (ext || '').toLowerCase().replace(/^\./, '');
+  switch (e) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'webp':
+      return 'image/webp';
+    case 'svg':
+      return 'image/svg+xml';
+    case 'bmp':
+      return 'image/bmp';
+    case 'tiff':
+    case 'tif':
+      return 'image/tiff';
+    default:
+      return 'image/png';
+  }
 }

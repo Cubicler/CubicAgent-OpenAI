@@ -150,6 +150,43 @@ describe('MessageHelper', () => {
       const parsedContent = JSON.parse(userMessage.content as string);
       expect(parsedContent.name).toBe('Unknown');
     });
+
+    it('should map image URL messages to mixed content parts', () => {
+      const request = createMockAgentRequest();
+      request.messages?.push({
+        type: 'image',
+        sender: { id: 'user-1', name: 'Test User' },
+        content: 'https://example.com/picture.jpg',
+        metadata: { format: 'url', fileExtension: 'jpg' }
+      } as any);
+
+      const result = buildOpenAIMessages(request, mockOpenAIConfig, mockDispatchConfig, 1);
+      const last = result[result.length - 1];
+      expect(last.role).toBe('user');
+      const parts = last.content as unknown as Array<{ type: string; text?: string; image_url?: { url: string } }>;
+      expect(Array.isArray(parts)).toBe(true);
+      expect(parts[0].type).toBe('text');
+      expect(typeof parts[0].text).toBe('string');
+      expect(parts[1].type).toBe('image_url');
+      expect(parts[1].image_url?.url).toBe('https://example.com/picture.jpg');
+    });
+
+    it('should map base64 image messages to data URLs', () => {
+      const request = createMockAgentRequest();
+      const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAUA';
+      request.messages?.push({
+        type: 'image',
+        sender: { id: 'user-1', name: 'Test User' },
+        content: base64,
+        metadata: { format: 'base64', fileExtension: 'png' }
+      } as any);
+
+      const result = buildOpenAIMessages(request, mockOpenAIConfig, mockDispatchConfig, 1);
+      const last = result[result.length - 1];
+      const parts = last.content as unknown as Array<{ type: string; text?: string; image_url?: { url: string } }>;
+      expect(parts[1].type).toBe('image_url');
+      expect(parts[1].image_url?.url.startsWith('data:image/png;base64,')).toBe(true);
+    });
   });
 
   describe('buildSystemMessage', () => {
