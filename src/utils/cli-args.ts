@@ -1,6 +1,13 @@
 /**
  * Command-line argument parsing utilities
  */
+import { readFile } from 'fs/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface CLIArgs {
   // OpenAI Configuration
@@ -221,7 +228,10 @@ Environment Variables:
  */
 export async function printVersion(): Promise<void> {
   try {
-    const { default: packageJson } = await import('../../package.json');
+    // In the dist/utils directory, package.json will be two levels up
+    const packageJsonPath = join(__dirname, '../../package.json');
+    const packageJsonContent = await readFile(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent);
     console.log(`@cubicler/cubicagent-openai v${packageJson.version}`);
   } catch {
     console.log('@cubicler/cubicagent-openai (version unknown)');

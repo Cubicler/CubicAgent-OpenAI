@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.4] - 2025-08-09
+
+### Fixed
+
+- **NPX Execution Issue** - Fixed binary executability for npx usage
+  - Added `postbuild` script to automatically make `dist/index.js` executable (`chmod +x`)
+  - Fixed version reading functionality by updating package.json path resolution
+  - Updated CLI argument utilities to properly read version from file system
+  - Binary now properly executes with `npx @cubicler/cubicagent-openai` commands
+
+### Changed
+
+- **Build Process Enhancement** - Improved automated build process
+  - Added `postbuild` script for automatic file permission handling
+  - Enhanced version detection using file system instead of ES module imports
+
+### Notes
+
+- **NPX Ready** - Package now fully supports npx execution out of the box
+- **Zero Breaking Changes** - All existing APIs remain fully compatible
+- **Better CLI Experience** - Version and help commands now work correctly via npx
+
 ## [2.6.3] - 2025-08-09
 
 ### Updated
@@ -190,6 +212,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Prior versions included OpenAI service creation via environment variables, memory tools, summarizer tools, and JWT support.
 
+[2.6.4]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.4
 [2.6.3]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.3
 [2.6.2]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.2
 [2.6.1]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.1

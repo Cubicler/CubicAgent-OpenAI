@@ -64,8 +64,10 @@ async function main() {
   }
 }
 
-// Only run if this is the main module
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Only run if this is the main module (handle both direct execution and npx)
+const isMainModule = import.meta.url === `file://${process.argv[1]}` || 
+                     process.argv[1]?.includes('cubicagent-openai');
+if (isMainModule) {
   main().catch((error) => {
     console.error('Unhandled error:', error);
     process.exit(1);
