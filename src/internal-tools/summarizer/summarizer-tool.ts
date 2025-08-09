@@ -3,6 +3,8 @@ import type { AgentTool, AgentClient } from '@cubicler/cubicagentkit';
 import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
 import type { InternalTool, InternalToolResult } from '../internal-tool.interface.js';
 import type { JSONValue } from '../../config/types.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 
 /**
  * Individual Summarizer Tool Instance
@@ -22,17 +24,20 @@ export class SummarizerToolInstance implements InternalTool {
   private summarizerModel: string;
   private originalTool: AgentTool;
   private agentClient: AgentClient;
+  private logger: Logger;
 
   constructor(
     originalTool: AgentTool,
     summarizerModel: string,
     openaiApiKey: string,
-    agentClient: AgentClient
+    agentClient: AgentClient,
+    logger?: Logger
   ) {
     this.toolName = `summarize_${originalTool.name}`;
     this.originalTool = originalTool;
     this.summarizerModel = summarizerModel;
     this.agentClient = agentClient;
+    this.logger = logger ?? createLogger({ silent: true });
     
     this.openai = new OpenAI({
       apiKey: openaiApiKey,
@@ -97,7 +102,7 @@ export class SummarizerToolInstance implements InternalTool {
     const { _prompt: _promptParam, ...originalParams } = params;
 
     try {
-      console.log(`🔧 Executing ${this.originalTool.name} for summarization`);
+      this.logger.info(`🔧 Executing ${this.originalTool.name} for summarization`);
       
       // Type assertion for AgentClient.callTool compatibility
       const typedParams = originalParams as Record<string, JSONValue>;
@@ -105,7 +110,7 @@ export class SummarizerToolInstance implements InternalTool {
       // Execute the original tool
       const toolResult = await this.agentClient.callTool(this.originalTool.name, typedParams);
       
-      console.log(`🤖 Summarizing ${this.originalTool.name} results with ${this.summarizerModel}`);
+      this.logger.info(`🤖 Summarizing ${this.originalTool.name} results with ${this.summarizerModel}`);
       
       // Summarize the results using the dedicated model
       const summaryResult = await this.summarizeResult(toolResult, prompt);
@@ -120,7 +125,7 @@ export class SummarizerToolInstance implements InternalTool {
       };
       
     } catch (error) {
-      console.error(`❌ Summarizer failed for ${this.originalTool.name}:`, error);
+      this.logger.error(`❌ Summarizer failed for ${this.originalTool.name}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error in tool execution',
@@ -155,7 +160,7 @@ export class SummarizerToolInstance implements InternalTool {
       return { summary, tokensUsed };
       
     } catch (error) {
-      console.error('❌ OpenAI summarization failed:', error);
+      this.logger.error('❌ OpenAI summarization failed:', error);
       throw new Error(`Summarization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -168,9 +173,10 @@ export function createSummarizerTools(
   availableTools: AgentTool[],
   summarizerModel: string,
   openaiApiKey: string,
-  agentClient: AgentClient
+  agentClient: AgentClient,
+  logger: Logger
 ): SummarizerToolInstance[] {
   return availableTools.map(tool => 
-    new SummarizerToolInstance(tool, summarizerModel, openaiApiKey, agentClient)
+    new SummarizerToolInstance(tool, summarizerModel, openaiApiKey, agentClient, logger)
   );
 }

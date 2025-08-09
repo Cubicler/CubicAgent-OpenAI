@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString, extractOptionalNumber, extractRequiredStringArray } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for remembering new memories
  */
 export class MemoryRememberTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_remember';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -49,7 +53,7 @@ export class MemoryRememberTool extends BaseMemoryTool {
 
       const memoryId = await this.memory.remember(sentence, importance, tags);
 
-      console.log(`💾 Stored memory: ${sentence.substring(0, 50)}...`);
+      this.logger.info(`💾 Stored memory: ${sentence.substring(0, 50)}...`);
       
       return {
         success: true,

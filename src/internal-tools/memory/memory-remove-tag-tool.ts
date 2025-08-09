@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for removing tags from memories
  */
 export class MemoryRemoveTagTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_remove_tag';
+  
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -41,7 +45,7 @@ export class MemoryRemoveTagTool extends BaseMemoryTool {
 
       const tagRemoved = await this.memory.removeTag(id, tag);
 
-      console.log(`🏷️ Remove tag: ${id} - ${tagRemoved ? 'success' : 'failed'}`);
+      this.logger.info(`🏷️ Remove tag: ${id} - ${tagRemoved ? 'success' : 'failed'}`);
       
       return {
         success: tagRemoved,

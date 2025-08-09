@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
 import type { InternalTool, InternalToolResult } from '../internal-tool.interface.js';
 import type { JSONValue } from '../../config/types.js';
+import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '@/utils/pino-logger.js';
 
 /**
  * Summarizer Internal Tool
@@ -18,15 +20,18 @@ export class SummarizerInternalTool implements InternalTool {
   private openai: OpenAI;
   private summarizerModel: string;
   private originalTool: InternalTool;
+  private logger: Logger;
 
   constructor(
     originalTool: InternalTool,
     summarizerModel: string,
-    openaiApiKey: string
+    openaiApiKey: string,
+    logger?: Logger
   ) {
     this.toolName = `summarize_${originalTool.toolName}`;
     this.originalTool = originalTool;
     this.summarizerModel = summarizerModel;
+    this.logger = logger ?? createLogger({ silent: true });
     
     this.openai = new OpenAI({
       apiKey: openaiApiKey,
@@ -92,12 +97,12 @@ export class SummarizerInternalTool implements InternalTool {
     const { _prompt: _promptParam, ...originalParams } = params;
 
     try {
-      console.log(`🔧 Executing ${this.originalTool.toolName} for summarization`);
+      this.logger.info(`🔧 Executing ${this.originalTool.toolName} for summarization`);
       
       // Execute the original internal tool
       const toolResult = await this.originalTool.execute(originalParams as JSONValue);
       
-      console.log(`🤖 Summarizing ${this.originalTool.toolName} results with ${this.summarizerModel}`);
+      this.logger.info(`🤖 Summarizing ${this.originalTool.toolName} results with ${this.summarizerModel}`);
       
       // Summarize the results using the dedicated model
       const summaryResult = await this.summarizeResult(toolResult, prompt);
@@ -112,7 +117,7 @@ export class SummarizerInternalTool implements InternalTool {
       };
       
     } catch (error) {
-      console.error(`❌ Summarizer failed for ${this.originalTool.toolName}:`, error);
+      this.logger.error(`❌ Summarizer failed for ${this.originalTool.toolName}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error in internal tool execution',
@@ -147,7 +152,7 @@ export class SummarizerInternalTool implements InternalTool {
       return { summary, tokensUsed };
       
     } catch (error) {
-      console.error('❌ OpenAI summarization failed:', error);
+      this.logger.error('❌ OpenAI summarization failed:', error);
       throw new Error(`Summarization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

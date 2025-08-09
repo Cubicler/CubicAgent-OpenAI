@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for adding tags to memories
  */
 export class MemoryAddTagTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_add_tag';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -41,7 +45,7 @@ export class MemoryAddTagTool extends BaseMemoryTool {
       
       const tagAdded = await this.memory.addTag(id, tag);
       
-      console.log(`🏷️ Add tag: ${id} - ${tagAdded ? 'success' : 'failed'}`);
+      this.logger.info(`🏷️ Add tag: ${id} - ${tagAdded ? 'success' : 'failed'}`);
       
       return {
         success: tagAdded,

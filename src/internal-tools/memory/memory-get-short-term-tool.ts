@@ -2,12 +2,16 @@ import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
 import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for getting short-term memories
  */
 export class MemoryGetShortTermTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_get_short_term';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -27,7 +31,7 @@ export class MemoryGetShortTermTool extends BaseMemoryTool {
     try {
       const shortTermMemories = this.memory.getShortTermMemories();
 
-      console.log(`📋 Short-term memories: ${shortTermMemories.length} items`);
+      this.logger.info(`📋 Short-term memories: ${shortTermMemories.length} items`);
       
       return {
         success: true,

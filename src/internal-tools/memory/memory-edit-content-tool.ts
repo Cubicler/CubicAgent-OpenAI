@@ -3,12 +3,18 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for editing memory content
  */
 export class MemoryEditContentTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_edit_content';
+
+  constructor(memory: MemoryRepository, logger: Logger) {
+    super(memory, logger);
+  }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -41,7 +47,7 @@ export class MemoryEditContentTool extends BaseMemoryTool {
 
       const contentUpdated = await this.memory.editContent(id, sentence);
 
-      console.log(`✏️ Edit content: ${id} - ${contentUpdated ? 'success' : 'failed'}`);
+      this.logger.info(`✏️ Edit content: ${id} - ${contentUpdated ? 'success' : 'failed'}`);
       
       return {
         success: contentUpdated,

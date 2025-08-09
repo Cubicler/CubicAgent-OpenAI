@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for forgetting/deleting memories
  */
 export class MemoryForgetTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_forget';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -35,7 +39,7 @@ export class MemoryForgetTool extends BaseMemoryTool {
       const id = extractRequiredString(parameters, 'id');
       const deleted = await this.memory.forget(id);
 
-      console.log(`🗑️ Memory forget: ${id} - ${deleted ? 'success' : 'not found'}`);
+      this.logger.info(`🗑️ Memory forget: ${id} - ${deleted ? 'success' : 'not found'}`);
       
       return {
         success: deleted,

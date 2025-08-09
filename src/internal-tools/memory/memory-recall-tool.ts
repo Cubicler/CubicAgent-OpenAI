@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for recalling specific memories by ID
  */
 export class MemoryRecallTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_recall';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -35,7 +39,7 @@ export class MemoryRecallTool extends BaseMemoryTool {
       const id = extractRequiredString(parameters, 'id');
       const memory = await this.memory.recall(id);
 
-      console.log(`📋 Recalled memory: ${id}`);
+      this.logger.info(`📋 Recalled memory: ${id}`);
       
       return {
         success: true,

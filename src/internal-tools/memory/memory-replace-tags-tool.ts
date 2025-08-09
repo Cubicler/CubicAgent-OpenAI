@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString, extractRequiredStringArray } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for replacing all tags on a memory
  */
 export class MemoryReplaceTagsTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_replace_tags';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -43,7 +47,7 @@ export class MemoryReplaceTagsTool extends BaseMemoryTool {
 
       const tagsReplaced = await this.memory.replaceTags(id, tags);
 
-      console.log(`🏷️ Replace tags: ${id} - ${tagsReplaced ? 'success' : 'failed'}`);
+      this.logger.info(`🏷️ Replace tags: ${id} - ${tagsReplaced ? 'success' : 'failed'}`);
       
       return {
         success: tagsReplaced,

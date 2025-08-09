@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for adding memories to short-term storage
  */
 export class MemoryAddToShortTermTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_add_to_short_term';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -35,7 +39,7 @@ export class MemoryAddToShortTermTool extends BaseMemoryTool {
       const id = extractRequiredString(parameters, 'id');
       const added = await this.memory.addToShortTermMemory(id);
 
-      console.log(`➕ Add to short-term: ${id} - ${added ? 'success' : 'failed'}`);
+      this.logger.info(`➕ Add to short-term: ${id} - ${added ? 'success' : 'failed'}`);
       
       return {
         success: added,

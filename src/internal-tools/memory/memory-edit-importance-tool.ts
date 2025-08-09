@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString, extractRequiredNumber } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for editing memory importance
  */
 export class MemoryEditImportanceTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_edit_importance';
+
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -43,7 +47,7 @@ export class MemoryEditImportanceTool extends BaseMemoryTool {
 
       const importanceUpdated = await this.memory.editImportance(id, importance);
 
-      console.log(`✏️ Edit importance: ${id} - ${importanceUpdated ? 'success' : 'failed'}`);
+      this.logger.info(`✏️ Edit importance: ${id} - ${importanceUpdated ? 'success' : 'failed'}`);
       
       return {
         success: importanceUpdated,

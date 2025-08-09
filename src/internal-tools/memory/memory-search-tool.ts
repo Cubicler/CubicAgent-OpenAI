@@ -3,12 +3,16 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractOptionalString, extractOptionalNumber, extractOptionalStringArray } from '../../utils/memory-helper.js';
+import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Tool for searching memories
  */
 export class MemorySearchTool extends BaseMemoryTool {
   readonly toolName = 'agentmemory_search';
+  
+  constructor(memory: MemoryRepository, logger?: Logger) { super(memory, logger); }
 
   getToolDefinition(): ChatCompletionTool {
     return {
@@ -84,7 +88,7 @@ export class MemorySearchTool extends BaseMemoryTool {
 
       const memories = await this.memory.search(searchOptions);
       
-      console.log(`🔍 Searched memories with options: ${JSON.stringify(searchOptions)} - Found ${memories?.length || 0} results`);
+      this.logger.info(`🔍 Searched memories with options: ${JSON.stringify(searchOptions)} - Found ${memories?.length || 0} results`);
       
       return {
         success: true,
