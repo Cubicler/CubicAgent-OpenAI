@@ -4,6 +4,60 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2025-08-09
+
+### Added
+
+- **Comprehensive Image Handling Support** - Full support for image messages in OpenAI chat completions
+  - Support for both URL and base64 image formats
+  - Mixed content parts generation (text + image) for OpenAI compatibility
+  - Intelligent MIME type inference from file extensions (JPEG, PNG, GIF, WebP, SVG, BMP, TIFF)
+  - Clean logging with base64 data omitted from text envelopes
+  - Graceful fallback to plain text if image URL construction fails
+
+- **Structured Logging Infrastructure** - Professional logging system with Pino integration
+  - Logger interface for consistent logging across all components
+  - Configurable log levels with silent mode for stdio transport
+  - Backwards compatibility by mirroring important logs to console
+  - Transport-aware logging (silent stdio mode to avoid polluting MCP streams)
+
+### Changed
+
+- **Enhanced Message Processing** - Improved message handling with image support
+  - Updated `buildOpenAIMessages()` to handle image message types
+  - Added metadata support for image format and file extension
+  - Maintains sender information in text part while displaying images
+  - Backwards compatible with existing text message functionality
+
+- **Core System Logging Integration** - All core components now use structured logging
+  - Updated all handlers (OpenAIService, MessageHandler, TriggerHandler) to accept Logger
+  - Replaced console.log/error calls with proper logger methods throughout codebase
+  - Internal tools enhanced with logging support (memory tools, summarizer tools)
+  - Utility functions updated with logger integration
+
+- **Test Configuration** - Improved test reliability and consistency
+  - Changed test script from 'vitest' to 'vitest run' for deterministic CI behavior
+  - Updated factory tests to expect silent logging in stdio mode
+  - Added comprehensive test coverage for image handling scenarios
+
+### Fixed
+
+- **CLI Version Function** - Made version display async and read from package.json
+- **Memory Initialization** - Enhanced error handling with proper logging
+- **Message Helper** - Added fallback console logging for compatibility when logger unavailable
+
+### Dependencies
+
+- Upgraded `@cubicler/cubicagentkit` from `^2.6.0` to `^2.6.1`
+- Added `pino` `^9.3.2` for structured logging
+
+### Notes
+
+- **Zero Breaking Changes** - All existing APIs remain fully compatible
+- **Enhanced Developer Experience** - Better debugging with structured logs and image support
+- **Production Ready** - Silent stdio mode ensures clean MCP protocol communication
+- **Comprehensive Test Coverage** - All new features fully tested with 240+ passing tests
+
 ## [2.6.0] - 2025-08-09
 
 ### Added
@@ -105,6 +159,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Prior versions included OpenAI service creation via environment variables, memory tools, summarizer tools, and JWT support.
 
+[2.6.1]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.1
 [2.6.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.6.0
 [2.5.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.5.0
 [2.4.0]: https://github.com/Cubicler/CubicAgent-OpenAI/releases/tag/v2.4.0
