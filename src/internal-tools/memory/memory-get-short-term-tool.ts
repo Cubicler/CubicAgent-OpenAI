@@ -3,7 +3,7 @@ import type { JSONValue } from '../../config/types.js';
 import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import type { Logger } from '@/utils/logger.interface.js';
+import type { Logger } from '../../utils/logger.interface.js';
 
 /**
  * Tool for getting short-term memories

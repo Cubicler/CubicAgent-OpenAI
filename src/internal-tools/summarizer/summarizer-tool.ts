@@ -3,8 +3,8 @@ import type { AgentTool, AgentClient } from '@cubicler/cubicagentkit';
 import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
 import type { InternalTool, InternalToolResult } from '../internal-tool.interface.js';
 import type { JSONValue } from '../../config/types.js';
-import type { Logger } from '@/utils/logger.interface.js';
-import { createLogger } from '@/utils/pino-logger.js';
+import type { Logger } from '../../utils/logger.interface.js';
+import { createLogger } from '../../utils/pino-logger.js';
 
 /**
  * Individual Summarizer Tool Instance

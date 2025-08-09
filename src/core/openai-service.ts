@@ -1,8 +1,8 @@
 import { CubicAgent } from '@cubicler/cubicagentkit';
 import type { AgentRequest, AgentResponse } from '@cubicler/cubicagentkit';
 import type { OpenAITriggerHandling, OpenAIMessageHandling } from '../models/interfaces.js';
-import type { Logger } from '@/utils/logger.interface.js';
-import { createLogger } from '@/utils/pino-logger.js';
+import type { Logger } from '../utils/logger.interface.js';
+import { createLogger } from '../utils/pino-logger.js';
 
 /**
  * OpenAIService

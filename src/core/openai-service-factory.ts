@@ -23,8 +23,8 @@ import { OpenAIService } from './openai-service.js';
 import OpenAI from 'openai';
 import { OpenAIMessageHandler } from './openai-message-handler.js';
 import { OpenAITriggerHandler } from './openai-trigger-handler.js';
-import { createLogger } from '@/utils/pino-logger.js';
-import type { Logger } from '@/utils/logger.interface.js';
+import { createLogger } from '../utils/pino-logger.js';
+import type { Logger } from '../utils/logger.interface.js';
 
 // Import all memory tools for default injection
 import { MemoryRememberTool } from '../internal-tools/memory/memory-remember-tool.js';

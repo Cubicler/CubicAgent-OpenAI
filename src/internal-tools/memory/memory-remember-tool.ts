@@ -4,7 +4,7 @@ import type { InternalToolResult } from '../internal-tool.interface.js';
 import { BaseMemoryTool } from './base-memory-tool.js';
 import { extractRequiredString, extractOptionalNumber, extractRequiredStringArray } from '../../utils/memory-helper.js';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import type { Logger } from '@/utils/logger.interface.js';
+import type { Logger } from '../../utils/logger.interface.js';
 
 /**
  * Tool for remembering new memories

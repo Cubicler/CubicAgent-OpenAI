@@ -1,7 +1,7 @@
 import type { AgentRequest, MemoryRepository } from '@cubicler/cubicagentkit';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
 import type { OpenAIConfig, DispatchConfig } from '../config/environment.js';
-import type { Logger } from '@/utils/logger.interface.js';
+import type { Logger } from './logger.interface.js';
 
 /**
  * Message Helper Utilities

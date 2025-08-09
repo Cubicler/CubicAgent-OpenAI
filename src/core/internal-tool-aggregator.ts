@@ -2,8 +2,8 @@ import type { ChatCompletionTool } from 'openai/resources/chat/completions.js';
 import type { JSONValue } from '../config/types.js';
 import type { InternalTool, InternalToolResult } from '../internal-tools/internal-tool.interface.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
-import type { Logger } from '@/utils/logger.interface.js';
-import { createLogger } from '@/utils/pino-logger.js';
+import type { Logger } from '../utils/logger.interface.js';
+import { createLogger } from '../utils/pino-logger.js';
 
 /**
  * InternalToolAggregator - Generic aggregator for internal tools

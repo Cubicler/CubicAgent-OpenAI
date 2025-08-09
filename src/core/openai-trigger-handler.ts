@@ -5,8 +5,8 @@ import OpenAI from 'openai';
 import type { DispatchConfig, OpenAIConfig } from '../config/environment.js';
 import type { InternalToolHandling } from '../internal-tools/internal-tool-handler.interface.js';
 import { OpenAIBaseHandler } from './openai-base-handler.js';
-import type { Logger } from '@/utils/logger.interface.js';
-import { createLogger } from '@/utils/pino-logger.js';
+import type { Logger } from '../utils/logger.interface.js';
+import { createLogger } from '../utils/pino-logger.js';
 import type { OpenAITriggerHandling } from '../models/interfaces.js';
 
 export class OpenAITriggerHandler extends OpenAIBaseHandler implements OpenAITriggerHandling {

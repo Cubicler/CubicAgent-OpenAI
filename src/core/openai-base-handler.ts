@@ -8,8 +8,8 @@ import type { InternalToolHandling } from '../internal-tools/internal-tool-handl
 import type { OpenAIRequestParams, OpenAIResponse, ProcessToolCallsResult, SessionState, ToolExecutionResult } from '../models/types.js';
 import { InternalToolAggregator } from './internal-tool-aggregator.js';
 import { createSummarizerTools } from '../internal-tools/summarizer/summarizer-tool.js';
-import type { Logger } from '@/utils/logger.interface.js';
-import { createLogger } from '@/utils/pino-logger.js';
+import type { Logger } from '../utils/logger.interface.js';
+import { createLogger } from '../utils/pino-logger.js';
 
 export abstract class OpenAIBaseHandler {
   protected readonly openai: OpenAI;

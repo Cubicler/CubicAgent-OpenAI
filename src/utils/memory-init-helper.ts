@@ -1,5 +1,5 @@
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
-import type { Logger } from '@/utils/logger.interface.js';
+import type { Logger } from './logger.interface.js';
 
 /**
  * Helper functions for memory initialization and management
