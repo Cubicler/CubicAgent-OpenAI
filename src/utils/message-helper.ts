@@ -1,6 +1,7 @@
 import type { AgentRequest, MemoryRepository } from '@cubicler/cubicagentkit';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
 import type { OpenAIConfig, DispatchConfig } from '../config/environment.js';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Message Helper Utilities
@@ -16,12 +17,13 @@ export function buildOpenAIMessages(
   openaiConfig: OpenAIConfig,
   dispatchConfig: DispatchConfig,
   iteration: number = 1,
-  memory?: MemoryRepository
+  memory?: MemoryRepository,
+  logger?: Logger
 ): ChatCompletionMessageParam[] {
   const messages: ChatCompletionMessageParam[] = [];
 
   // Build system message with agent context and iteration info
-  const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration, memory);
+  const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration, memory, logger);
   
   messages.push({
     role: 'system',
@@ -71,7 +73,8 @@ export function buildSystemMessage(
   openaiConfig: OpenAIConfig,
   dispatchConfig: DispatchConfig,
   iteration: number,
-  memory?: MemoryRepository
+  memory?: MemoryRepository,
+  logger?: Logger
 ): string {
   let systemMessage = request.agent.prompt || '';
 
@@ -92,7 +95,8 @@ Store as complete sentences with tags. Use importance scores 0-1.`;
         }
       }
     } catch (error) {
-      console.warn('Failed to retrieve memory context:', error instanceof Error ? error.message : 'Unknown error');
+      if (logger) logger.warn('Failed to retrieve memory context:', error instanceof Error ? error.message : 'Unknown error');
+      else console.warn('Failed to retrieve memory context:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
@@ -118,13 +122,13 @@ Store as complete sentences with tags. Use importance scores 0-1.`;
  * Clean and extract final response content from OpenAI
  * Handles potential JSON responses and extracts meaningful content
  */
-export function cleanFinalResponse(content: string | null): string {
+export function cleanFinalResponse(content: string | null, logger?: Logger): string {
   if (!content) {
     return 'No response from OpenAI';
   }
 
   // Try to parse as JSON and extract content field if it exists
-  const extractedContent = tryExtractJsonContent(content);
+  const extractedContent = tryExtractJsonContent(content, logger);
   if (extractedContent !== null) {
     return extractedContent;
   }
@@ -137,14 +141,19 @@ export function cleanFinalResponse(content: string | null): string {
  * Attempt to extract content from JSON response
  * Returns null if not valid JSON or no content field found
  */
-function tryExtractJsonContent(content: string): string | null {
+function tryExtractJsonContent(content: string, logger?: Logger): string | null {
   try {
     const parsed = JSON.parse(content);
     
     // If it's an object with a content field, extract it
     if (isObjectWithContentField(parsed)) {
       const extractedContent = typeof parsed.content === 'string' ? parsed.content : content;
-      console.log('Extracted content from JSON response:', {
+      if (logger) logger.debug('Extracted content from JSON response:', {
+        originalLength: content.length,
+        extractedLength: extractedContent.length,
+        wasJSON: true
+      });
+      else console.log('Extracted content from JSON response:', {
         originalLength: content.length,
         extractedLength: extractedContent.length,
         wasJSON: true
@@ -153,11 +162,13 @@ function tryExtractJsonContent(content: string): string | null {
     }
     
     // If it's an object but no content field, return null to use original
-    console.log('JSON response without content field, using original');
+    if (logger) logger.debug('JSON response without content field, using original');
+    else console.log('JSON response without content field, using original');
     return null;
   } catch {
     // Not JSON, return null to use original content as plain text
-    console.log('Response is not JSON, using as plain text');
+    if (logger) logger.debug('Response is not JSON, using as plain text');
+    else console.log('Response is not JSON, using as plain text');
     return null;
   }
 }

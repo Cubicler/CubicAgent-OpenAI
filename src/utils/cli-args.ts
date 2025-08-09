@@ -160,7 +160,7 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
 /**
  * Print help message
  */
-export function printHelp(): void {
+export function printHelp(): void {;
   console.log(`
 CubicAgent-OpenAI - OpenAI agent for Cubicler
 
@@ -219,8 +219,11 @@ Environment Variables:
 /**
  * Print version information
  */
-export function printVersion(): void {
-  // For simplicity, just print the hardcoded version
-  // In production, this could read from package.json
-  console.log('@cubicler/cubicagent-openai v2.5.0');
+export async function printVersion(): Promise<void> {
+  try {
+    const { default: packageJson } = await import('../../package.json');
+    console.log(`@cubicler/cubicagent-openai v${packageJson.version}`);
+  } catch {
+    console.log('@cubicler/cubicagent-openai (version unknown)');
+  }
 }

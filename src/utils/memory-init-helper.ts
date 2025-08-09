@@ -1,4 +1,5 @@
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
+import type { Logger } from '@/utils/logger.interface.js';
 
 /**
  * Helper functions for memory initialization and management
@@ -10,19 +11,20 @@ import type { MemoryRepository } from '@cubicler/cubicagentkit';
  */
 export async function initializeShortTermMemoryOnFirstLoad(
   memory: MemoryRepository,
-  maxTokens: number = 2000
+  maxTokens: number = 2000,
+  logger?: Logger
 ): Promise<void> {
   try {
     // Check if short-term memory methods are available
     if (typeof memory.getShortTermMemories !== 'function' || typeof memory.addToShortTermMemory !== 'function') {
-      console.log('📋 Short-term memory methods not available, skipping initialization');
+      logger?.info('📋 Short-term memory methods not available, skipping initialization');
       return;
     }
 
     // Check if short-term memory is already populated
     const existingShortTerm = memory.getShortTermMemories();
     if (existingShortTerm && existingShortTerm.length > 0) {
-      console.log(`📋 Short-term memory already contains ${existingShortTerm.length} items, skipping initialization`);
+      logger?.info(`📋 Short-term memory already contains ${existingShortTerm.length} items, skipping initialization`);
       return;
     }
 
@@ -40,7 +42,7 @@ export async function initializeShortTermMemoryOnFirstLoad(
     });
 
     if (!recentMemories || recentMemories.length === 0) {
-      console.log('📋 No memories found to populate short-term memory');
+      logger?.info('📋 No memories found to populate short-term memory');
       return;
     }
 
@@ -83,14 +85,14 @@ export async function initializeShortTermMemoryOnFirstLoad(
       try {
         await memory.addToShortTermMemory((mem as Record<string, unknown>)['id'] as string);
       } catch (error) {
-        console.warn(`⚠️ Failed to add memory ${(mem as Record<string, unknown>)['id']} to short-term: ${error}`);
+        logger?.warn(`⚠️ Failed to add memory ${(mem as Record<string, unknown>)['id']} to short-term: ${error}`);
       }
     }
 
-    console.log(`📋 Initialized short-term memory with ${selectedMemories.length} recent important memories (~${currentTokenCount}/${maxTokens} tokens, searched ${recentMemories.length}/${searchLimit})`);
+    logger?.info(`📋 Initialized short-term memory with ${selectedMemories.length} recent important memories (~${currentTokenCount}/${maxTokens} tokens, searched ${recentMemories.length}/${searchLimit})`);
     
   } catch (error) {
-    console.error('❌ Failed to initialize short-term memory:', error);
+    logger?.error('❌ Failed to initialize short-term memory:', error);
     // Don't throw - this is non-critical functionality
   }
 }
@@ -112,4 +114,3 @@ function estimateMemoryTokens(memory: unknown): number {
   
   return contentTokens + tagTokens + metadataOverhead;
 }
-
