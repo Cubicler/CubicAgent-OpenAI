@@ -77,14 +77,21 @@ export class MemorySearchTool extends BaseMemoryTool {
       const tags = hasTagsParam ? extractOptionalStringArray(parameters, 'tags') : undefined;
 
       // Build search options, only including defined values
-      const searchOptions: any = {};
+      const searchOptions: {
+        content?: string;
+        contentRegex?: string;
+        tags?: string[];
+        tagsRegex?: string;
+        sortBy?: 'importance' | 'timestamp' | 'both';
+        sortOrder?: 'asc' | 'desc';
+        limit: number;
+      } = { limit };
       if (content !== undefined) searchOptions.content = content;
       if (contentRegex !== undefined) searchOptions.contentRegex = contentRegex;
       if (tags !== undefined) searchOptions.tags = tags;
       if (tagsRegex !== undefined) searchOptions.tagsRegex = tagsRegex;
       if (sortBy !== undefined) searchOptions.sortBy = sortBy;
       if (sortOrder !== undefined) searchOptions.sortOrder = sortOrder;
-      searchOptions.limit = limit;
 
       const memories = await this.memory.search(searchOptions);
       
@@ -92,7 +99,7 @@ export class MemorySearchTool extends BaseMemoryTool {
       
       return {
         success: true,
-        memories: memories ? memories.map((memory: any) => this.formatMemoryItem(memory)) : [],
+        memories: memories ? memories.map((memory) => this.formatMemoryItem(memory)) : [],
         count: memories?.length || 0,
         searchOptions: searchOptions
       };
@@ -105,14 +112,6 @@ export class MemorySearchTool extends BaseMemoryTool {
   }
 
   private formatMemoryItem(memory: any): any {
-    return {
-      id: memory.id || memory.memoryId,
-      sentence: memory.sentence || memory.content,
-      importance: memory.importance || 5,
-      tags: Array.isArray(memory.tags) ? memory.tags : [],
-      createdAt: memory.createdAt || new Date().toISOString(),
-      updatedAt: memory.updatedAt || new Date().toISOString(),
-      score: memory.score || memory.similarity || 0
-    };
+    return memory;
   }
 }

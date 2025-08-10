@@ -5,6 +5,7 @@ import { BaseMemoryTool } from './base-memory-tool.js';
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
 import type { Logger } from '../../utils/logger.interface.js';
 
+
 /**
  * Tool for getting short-term memories
  */
@@ -35,7 +36,7 @@ export class MemoryGetShortTermTool extends BaseMemoryTool {
       
       return {
         success: true,
-        memories: shortTermMemories.map((item: any) => this.formatMemoryItem(item)),
+        memories: shortTermMemories,
         count: shortTermMemories.length
       };
     } catch (error) {
@@ -44,16 +45,5 @@ export class MemoryGetShortTermTool extends BaseMemoryTool {
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       };
     }
-  }
-
-  private formatMemoryItem(memory: any): any {
-    return {
-      id: memory.id || memory.memoryId,
-      sentence: memory.sentence || memory.content,
-      importance: memory.importance || 5,
-      tags: Array.isArray(memory.tags) ? memory.tags : [],
-      createdAt: memory.createdAt || new Date().toISOString(),
-      updatedAt: memory.updatedAt || new Date().toISOString()
-    };
   }
 }

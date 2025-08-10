@@ -55,13 +55,6 @@ export class MemoryRecallTool extends BaseMemoryTool {
   }
 
   private formatMemoryItem(memory: any): any {
-    return {
-      id: memory.id || memory.memoryId,
-      sentence: memory.sentence || memory.content,
-      importance: memory.importance || 5,
-      tags: Array.isArray(memory.tags) ? memory.tags : [],
-      createdAt: memory.createdAt || new Date().toISOString(),
-      updatedAt: memory.updatedAt || new Date().toISOString()
-    };
+    return memory;
   }
 }
