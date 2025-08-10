@@ -1,4 +1,4 @@
-import type { AgentRequest, MemoryRepository } from '@cubicler/cubicagentkit';
+import type { AgentRequest, MemoryRepository, JSONValue } from '@cubicler/cubicagentkit';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions.js';
 import type { OpenAIConfig, DispatchConfig } from '../config/environment.js';
 import type { Logger } from './logger.interface.js';
@@ -22,23 +22,19 @@ export function buildOpenAIMessages(
 ): ChatCompletionMessageParam[] {
   const messages: ChatCompletionMessageParam[] = [];
 
-  // Build system message with agent context and iteration info
   const systemContent = buildSystemMessage(request, openaiConfig, dispatchConfig, iteration, memory, logger);
-  
+   
   messages.push({
     role: 'system',
     content: systemContent
   });
 
-  // Convert request messages to OpenAI format (messages is optional in AgentRequest)
   const requestMessages = Array.isArray(request.messages) ? request.messages : [];
   for (const message of requestMessages) {
-    // Skip messages with null content
     if (!message.content) {
       continue;
     }
 
-    // Check if message is from the agent (assistant) by comparing sender ID
     if (message.sender.id === request.agent.identifier) {
       messages.push({
         role: 'assistant', 
@@ -206,7 +202,7 @@ function tryExtractJsonContent(content: string, logger?: Logger): string | null 
 /**
  * Type guard to check if parsed object has a content field
  */
-function isObjectWithContentField(parsed: unknown): parsed is { content: unknown } {
+function isObjectWithContentField(parsed: JSONValue): parsed is { content: JSONValue } {
   return typeof parsed === 'object' && parsed !== null && 'content' in parsed;
 }
 

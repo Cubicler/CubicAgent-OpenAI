@@ -9,10 +9,8 @@ import { parseArgs, printHelp, printVersion } from './utils/cli-args.js';
  */
 async function main() {
   try {
-    // Parse command-line arguments
     const cliArgs = parseArgs();
 
-    // Handle help and version
     if (cliArgs.help) {
       printHelp();
       return;
@@ -23,7 +21,6 @@ async function main() {
       return;
     }
 
-    // Create the OpenAI service from environment variables with CLI args override
     // If no transport specified via CLI or env vars, default to stdio for CLI usage
     const hasAnyArgs = Object.keys(cliArgs).length > 0;
     const finalCliArgs = hasAnyArgs && !cliArgs.transport && !process.env['TRANSPORT_MODE'] 
@@ -37,14 +34,12 @@ async function main() {
     
     const openaiService = await createOpenAIServiceFromEnv(finalCliArgs);
 
-    // Start the service
     await openaiService.start();
     
     if (!isStdio) {
       console.log('CubicAgent-OpenAI started successfully');
     }
-
-    // Handle graceful shutdown
+    
     process.on('SIGINT', async () => {
       if (!isStdio) console.log('Received SIGINT, shutting down gracefully...');
       process.exit(0);
@@ -64,7 +59,6 @@ async function main() {
   }
 }
 
-// Only run if this is the main module (handle both direct execution and npx)
 const isMainModule = import.meta.url === `file://${process.argv[1]}` || 
                      process.argv[1]?.includes('cubicagent-openai');
 if (isMainModule) {
@@ -73,8 +67,6 @@ if (isMainModule) {
     process.exit(1);
   });
 }
-
-// Export for library usage
 export { 
   createOpenAIServiceFromEnv,
   createOpenAIServiceFromConfig,

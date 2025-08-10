@@ -1,5 +1,6 @@
 import type { MemoryRepository } from '@cubicler/cubicagentkit';
 import type { Logger } from './logger.interface.js';
+import type { MemoryData } from '../models/memory.interfaces.js';
 
 /**
  * Helper functions for memory initialization and management
@@ -15,30 +16,25 @@ export async function initializeShortTermMemoryOnFirstLoad(
   logger?: Logger
 ): Promise<void> {
   try {
-    // Check if short-term memory methods are available
     if (typeof memory.getShortTermMemories !== 'function' || typeof memory.addToShortTermMemory !== 'function') {
       logger?.info('📋 Short-term memory methods not available, skipping initialization');
       return;
     }
 
-    // Check if short-term memory is already populated
     const existingShortTerm = memory.getShortTermMemories();
     if (existingShortTerm && existingShortTerm.length > 0) {
       logger?.info(`📋 Short-term memory already contains ${existingShortTerm.length} items, skipping initialization`);
       return;
     }
 
-    // Calculate intelligent limit based on maxTokens
-    // Assume average ~80 tokens per memory (content + metadata), fetch 2x what we need
     const averageTokensPerMemory = 80;
     const estimatedMemoryCount = Math.ceil(maxTokens / averageTokensPerMemory);
-    const searchLimit = Math.min(Math.max(estimatedMemoryCount * 2, 10), 100); // 2x buffer, min 10, max 100
+    const searchLimit = Math.min(Math.max(estimatedMemoryCount * 2, 10), 100);
 
-    // Search for the most recent memories first, then we'll sort by importance manually
     const recentMemories = await memory.search({
-      sortBy: 'timestamp', // Sort by timestamp first to get latest memories
-      sortOrder: 'desc', // Most recent first
-      limit: searchLimit // Intelligent limit based on token capacity
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit: searchLimit
     });
 
     if (!recentMemories || recentMemories.length === 0) {
@@ -46,32 +42,34 @@ export async function initializeShortTermMemoryOnFirstLoad(
       return;
     }
 
-    // Now manually sort by importance (desc) while preserving timestamp order for ties
-    const sortedMemories = recentMemories.sort((a: unknown, b: unknown) => {
-      const memA = a as Record<string, unknown>;
-      const memB = b as Record<string, unknown>;
-      
-      // Sort by importance first (higher importance first)
-      const importanceA = (memA['importance'] as number) || 5;
-      const importanceB = (memB['importance'] as number) || 5;
+    interface MemoryData {
+      id: string;
+      sentence?: string;
+      content?: string;
+      importance: number;
+      tags: string[];
+      createdAt?: string;
+      updatedAt?: string;
+    }
+
+    const sortedMemories = recentMemories.sort((a: MemoryData, b: MemoryData) => {
+      const importanceA = a.importance || 5;
+      const importanceB = b.importance || 5;
       const importanceDiff = importanceB - importanceA;
       
       if (importanceDiff !== 0) return importanceDiff;
       
-      // If importance is equal, maintain timestamp order (more recent first)
-      const timeA = new Date((memA['updatedAt'] as string) || (memA['createdAt'] as string) || 0).getTime();
-      const timeB = new Date((memB['updatedAt'] as string) || (memB['createdAt'] as string) || 0).getTime();
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
       return timeB - timeA;
     });
 
-    // Filter memories to fit within token capacity
-    const selectedMemories: unknown[] = [];
+    const selectedMemories: MemoryData[] = [];
     let currentTokenCount = 0;
 
     for (const memory of sortedMemories) {
       const memoryTokenEstimate = estimateMemoryTokens(memory);
       
-      // Check if adding this memory would exceed the token limit
       if (currentTokenCount + memoryTokenEstimate > maxTokens) {
         break;
       }
@@ -83,9 +81,9 @@ export async function initializeShortTermMemoryOnFirstLoad(
     // Add selected memories to short-term memory
     for (const mem of selectedMemories) {
       try {
-        await memory.addToShortTermMemory((mem as Record<string, unknown>)['id'] as string);
+        await memory.addToShortTermMemory(mem.id);
       } catch (error) {
-        logger?.warn(`⚠️ Failed to add memory ${(mem as Record<string, unknown>)['id']} to short-term: ${error}`);
+        logger?.warn(`⚠️ Failed to add memory ${mem.id} to short-term: ${error}`);
       }
     }
 
@@ -97,20 +95,13 @@ export async function initializeShortTermMemoryOnFirstLoad(
   }
 }
 
-/**
- * Estimate the token count for a memory item
- * This is a rough estimation based on content length
- */
-function estimateMemoryTokens(memory: unknown): number {
-  const mem = memory as Record<string, unknown>;
-  const content = (mem['sentence'] as string) || (mem['content'] as string) || '';
-  const tags = Array.isArray(mem['tags']) ? (mem['tags'] as string[]).join(', ') : '';
+function estimateMemoryTokens(memory: MemoryData): number {
+  const content = memory.sentence || memory.content || '';
+  const tags = Array.isArray(memory.tags) ? memory.tags.join(', ') : '';
   
-  // Rough estimation: ~4 characters per token on average
-  // Add some overhead for metadata (id, importance, timestamps)
   const contentTokens = Math.ceil(content.length / 4);
   const tagTokens = Math.ceil(tags.length / 4);
-  const metadataOverhead = 10; // Rough estimate for id, importance, timestamps
+  const metadataOverhead = 10;
   
   return contentTokens + tagTokens + metadataOverhead;
 }

@@ -1,5 +1,5 @@
 import type { Logger } from './logger.interface.js';
-import pino from 'pino';
+import pino, { type Logger as PinoLogger } from 'pino';
 
 export type LoggerLevel = 'silent' | 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 
@@ -9,7 +9,7 @@ export interface CreateLoggerOptions {
 }
 
 class PinoWrappedLogger implements Logger {
-  constructor(private readonly p: any, private readonly silent = false) {} // eslint-disable-line @typescript-eslint/no-explicit-any
+  constructor(private readonly p: PinoLogger, private readonly silent = false) {}
   private skip(): boolean { return this.silent || this.p?.level === 'silent'; }
   debug(msg: string, obj?: unknown): void { if (!this.skip()) { this.p.debug(obj ?? {}, msg); console.debug(msg, obj ?? ''); } }
   info(msg: string, obj?: unknown): void {

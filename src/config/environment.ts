@@ -7,21 +7,17 @@ import 'dotenv/config';
  * Optional: Additional OpenAI configuration for advanced use cases
  */
 
-// OpenAI Configuration Schema
 export const openAIConfigSchema = z.object({
   apiKey: z.string().min(1, 'OpenAI API key is required'),
   model: z.enum([
-    // GPT-4o models
     'gpt-4o',
     'gpt-4o-mini',
-    // GPT-4 models
     'gpt-4',
     'gpt-4-turbo',
     'gpt-4-turbo-preview',
     'gpt-4-0125-preview',
     'gpt-4-1106-preview',
     'gpt-4-vision-preview',
-    // GPT-3.5 models
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-0125',
     'gpt-3.5-turbo-1106',
@@ -32,20 +28,17 @@ export const openAIConfigSchema = z.object({
   organization: z.string().optional(),
   project: z.string().optional(),
   baseURL: z.string().url().optional(),
-  timeout: z.number().positive().default(600000), // 10 minutes (OpenAI default)
-  maxRetries: z.number().min(0).default(2), // OpenAI default
+  timeout: z.number().positive().default(600000),
+  maxRetries: z.number().min(0).default(2),
   summarizerModel: z.enum([
-    // GPT-4o models
     'gpt-4o',
     'gpt-4o-mini',
-    // GPT-4 models
     'gpt-4',
     'gpt-4-turbo',
     'gpt-4-turbo-preview',
     'gpt-4-0125-preview',
     'gpt-4-1106-preview',
     'gpt-4-vision-preview',
-    // GPT-3.5 models
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-0125',
     'gpt-3.5-turbo-1106',
@@ -53,39 +46,31 @@ export const openAIConfigSchema = z.object({
   ]).optional(),
 });
 
-// Transport Configuration Schema
 export const transportConfigSchema = z.object({
   mode: z.enum(['http', 'stdio', 'sse']).default('http'),
-  // HTTP-specific options
-  cubiclerUrl: z.string().url().optional(), // Required for HTTP mode
-  // SSE-specific options
-  sseUrl: z.string().url().optional(), // Required for SSE mode (e.g., 'http://localhost:8080')
-  agentId: z.string().optional(), // Required for SSE mode (unique agent identifier)
+  cubiclerUrl: z.string().url().optional(),
+  sseUrl: z.string().url().optional(),
+  agentId: z.string().optional(),
 });
 
-// Memory Configuration Schema
 export const memoryConfigSchema = z.object({
   enabled: z.boolean().default(false),
-  type: z.enum(['memory', 'sqlite']).default('memory'), // in-memory vs persistent
-  dbPath: z.string().default('./memories.db'), // SQLite database path
-  maxTokens: z.number().positive().default(2000), // Short-term memory limit
-  defaultImportance: z.number().min(0).max(1).default(0.5), // Default importance score
+  type: z.enum(['memory', 'sqlite']).default('memory'),
+  dbPath: z.string().default('./memories.db'),
+  maxTokens: z.number().positive().default(2000),
+  defaultImportance: z.number().min(0).max(1).default(0.5),
 });
 
-// JWT Configuration Schema (supports both static tokens and OAuth)
 export const jwtConfigSchema = z.object({
   enabled: z.boolean().default(false),
   type: z.enum(['static', 'oauth']).default('static'),
-  // Static JWT configuration
-  token: z.string().optional(), // Required for static type
-  // OAuth JWT configuration  
-  clientId: z.string().optional(), // Required for oauth type
-  clientSecret: z.string().optional(), // Required for oauth type
-  tokenEndpoint: z.string().url().optional(), // Required for oauth type
+  token: z.string().optional(),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(),
+  tokenEndpoint: z.string().url().optional(),
   scope: z.string().optional(),
   grantType: z.enum(['client_credentials', 'authorization_code']).default('client_credentials'),
   refreshToken: z.string().optional(),
-  // JWT verification options (server-side)
   verificationSecret: z.string().optional(),
   verificationPublicKey: z.string().optional(),
   algorithms: z.array(z.string()).default(['HS256']),
@@ -94,17 +79,15 @@ export const jwtConfigSchema = z.object({
   ignoreExpiration: z.boolean().default(false),
 });
 
-// Dispatch Configuration Schema  
 export const dispatchConfigSchema = z.object({
-  timeout: z.number().positive().default(30000), // 30 seconds - overall request timeout
+  timeout: z.number().positive().default(30000),
   mcpMaxRetries: z.number().min(0).default(3),
-  mcpCallTimeout: z.number().positive().default(10000), // 10 seconds - individual MCP call timeout
+  mcpCallTimeout: z.number().positive().default(10000),
   sessionMaxIteration: z.number().positive().default(10),
-  endpoint: z.string().default('/'), // Default endpoint path (HTTP mode only)
-  agentPort: z.number().positive().default(3000), // Agent server port (HTTP mode only)
+  endpoint: z.string().default('/'),
+  agentPort: z.number().positive().default(3000),
 });
 
-// Combined Configuration Schema
 export const configSchema = z.object({
   openai: openAIConfigSchema,
   transport: transportConfigSchema,
@@ -126,7 +109,7 @@ export function loadConfig() {
       organization: process.env['OPENAI_ORG_ID'] || undefined,
       project: process.env['OPENAI_PROJECT_ID'] || undefined,
       baseURL: process.env['OPENAI_BASE_URL'] || undefined,
-      timeout: parseInt(process.env['OPENAI_TIMEOUT'] || '600000'), // 10 minutes
+      timeout: parseInt(process.env['OPENAI_TIMEOUT'] || '600000'),
       maxRetries: parseInt(process.env['OPENAI_MAX_RETRIES'] || '2'),
       summarizerModel: process.env['OPENAI_SUMMARIZER_MODEL'] || undefined,
     },

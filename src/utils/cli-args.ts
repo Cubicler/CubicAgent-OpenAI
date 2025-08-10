@@ -5,7 +5,6 @@ import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-// Get the directory name for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -57,7 +56,6 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
     const nextArg = argv[i + 1];
     
     switch (arg) {
-      // Help and version
       case '-h':
       case '--help':
         args.help = true;
@@ -66,8 +64,6 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
       case '--version':
         args.version = true;
         break;
-        
-      // OpenAI Configuration
       case '--model':
         if (nextArg) args.model = nextArg;
         i++;
@@ -100,8 +96,6 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
         if (nextArg) args.summarizerModel = nextArg;
         i++;
         break;
-        
-      // Transport Configuration
       case '--transport':
         if (nextArg) args.transport = nextArg as 'http' | 'stdio' | 'sse';
         i++;
@@ -118,8 +112,6 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
         if (nextArg) args.agentId = nextArg;
         i++;
         break;
-        
-      // Memory Configuration
       case '--memory-db-path':
         if (nextArg) args.memoryDbPath = nextArg;
         i++;
@@ -128,8 +120,6 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
         if (nextArg) args.memoryMaxTokens = parseInt(nextArg);
         i++;
         break;
-        
-      // Dispatch Configuration  
       case '--session-max-iteration':
         if (nextArg) args.sessionMaxIteration = parseInt(nextArg);
         i++;
@@ -138,8 +128,6 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
         if (nextArg) args.agentPort = parseInt(nextArg);
         i++;
         break;
-        
-      // JWT Configuration
       case '--jwt':
         args.jwt = true;
         break;
@@ -154,9 +142,7 @@ export function parseArgs(argv: string[] = process.argv): CLIArgs {
         if (nextArg) args.jwtToken = nextArg;
         i++;
         break;
-        
       default:
-        // Ignore unknown arguments
         break;
     }
   }
@@ -228,7 +214,6 @@ Environment Variables:
  */
 export async function printVersion(): Promise<void> {
   try {
-    // In the dist/utils directory, package.json will be two levels up
     const packageJsonPath = join(__dirname, '../../package.json');
     const packageJsonContent = await readFile(packageJsonPath, 'utf-8');
     const packageJson = JSON.parse(packageJsonContent);

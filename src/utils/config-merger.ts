@@ -10,13 +10,13 @@ export function mergeConfigWithArgs(baseConfig: Config, args: CLIArgs): Config {
     openai: {
       ...baseConfig.openai,
       ...(args.apiKey && { apiKey: args.apiKey }),
-      ...(args.model && { model: args.model as any }), // Type assertion for enum
+      ...(args.model && { model: args.model as Config['openai']['model'] }),
       ...(args.temperature !== undefined && { temperature: args.temperature }),
       ...(args.maxTokens !== undefined && { sessionMaxTokens: args.maxTokens }),
       ...(args.baseUrl && { baseURL: args.baseUrl }),
       ...(args.openaiTimeout !== undefined && { timeout: args.openaiTimeout }),
       ...(args.openaiMaxRetries !== undefined && { maxRetries: args.openaiMaxRetries }),
-      ...(args.summarizerModel && { summarizerModel: args.summarizerModel as any }), // Type assertion for enum
+      ...(args.summarizerModel && { summarizerModel: args.summarizerModel as Config['openai']['summarizerModel'] }),
     },
     transport: {
       ...baseConfig.transport,
