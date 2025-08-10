@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.5] - 2025-08-10
+
+### Added
+
+- **Memory Type Safety** - Introduced comprehensive TypeScript interfaces for memory operations
+  - New `MemoryData` interface for raw memory storage format
+  - `FormattedMemory` interface for standardized API responses
+  - `MemorySearchOptions` interface for type-safe memory queries
+  - Enhanced type safety across all memory-related components
+
+### Changed
+
+- **Code Quality Improvements** - Major refactoring for maintainability
+  - Removed redundant comments and documentation throughout codebase
+  - Simplified memory tools by removing duplicate formatting logic
+  - Improved type safety with proper JSONValue types in summarizer tools
+  - Enhanced CLI argument parsing with better type assertions
+  - Cleaned up configuration schemas by removing unnecessary comments
+
+- **Memory System Refactoring** - Streamlined memory tool implementations
+  - Memory tools now return raw memory data instead of formatted objects
+  - Removed redundant formatting functions across memory tools
+  - Simplified search options type definitions
+  - Improved consistency in memory data handling
+
+### Removed
+
+- **Unused Code Cleanup** - Removed obsolete components
+  - Deleted `NullAgentClient` implementation (no longer needed)
+  - Removed redundant memory formatting utilities
+  - Cleaned up unused imports and variables
+
+### Notes
+
+- **Zero Breaking Changes** - All existing APIs remain fully compatible
+- **Enhanced Type Safety** - Stronger TypeScript guarantees throughout the codebase
+
 ## [2.6.4] - 2025-08-09
 
 ### Fixed

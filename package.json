@@ -1,6 +1,6 @@
 {
   "name": "@cubicler/cubicagent-openai",
-  "version": "2.6.4",
+  "version": "2.6.5",
   "description": "Ready-to-deploy OpenAI agent application that integrates OpenAI's language models with Cubicler 2.6.x using CubicAgentKit 2.6.2",
   "type": "module",
   "main": "dist/index.js",
