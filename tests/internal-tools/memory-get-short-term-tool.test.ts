@@ -76,24 +76,7 @@ describe('MemoryGetShortTermTool', () => {
       expect(mockMemoryRepository.getShortTermMemories).toHaveBeenCalled();
       expect(result).toEqual({
         success: true,
-        memories: [
-          {
-            id: 'mem-1',
-            sentence: 'Short-term memory 1',
-            importance: 5,
-            tags: [],
-            createdAt: expect.any(String),
-            updatedAt: expect.any(String)
-          },
-          {
-            id: 'mem-2',
-            sentence: 'Short-term memory 2',
-            importance: 7,
-            tags: [],
-            createdAt: expect.any(String),
-            updatedAt: expect.any(String)
-          }
-        ],
+        memories: mockMemories,
         count: 2
       });
     });
@@ -147,24 +130,7 @@ describe('MemoryGetShortTermTool', () => {
       const result = await tool.execute({});
 
       expect(result.success).toBe(true);
-      expect(result.memories).toEqual([
-        {
-          id: 'mem-1',
-          sentence: 'Test memory',
-          importance: 5, // default
-          tags: ['tag1', 'tag2'],
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String)
-        },
-        {
-          id: 'mem-2',
-          sentence: 'Another memory',
-          importance: 5, // default
-          tags: [], // default
-          createdAt: expect.any(String),
-          updatedAt: expect.any(String)
-        }
-      ]);
+      expect(result.memories).toEqual(mockMemories);
     });
   });
 });

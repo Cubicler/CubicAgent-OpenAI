@@ -116,26 +116,7 @@ describe('MemorySearchTool', () => {
       });
       expect(result).toEqual({
         success: true,
-        memories: [
-          {
-            id: 'mem-1',
-            sentence: 'Test memory 1',
-            importance: 5,
-            tags: [],
-            createdAt: expect.any(String),
-            updatedAt: expect.any(String),
-            score: 0.9
-          },
-          {
-            id: 'mem-2',
-            sentence: 'Test memory 2',
-            importance: 7,
-            tags: [],
-            createdAt: expect.any(String),
-            updatedAt: expect.any(String),
-            score: 0.8
-          }
-        ],
+        memories: mockMemories,
         count: 2,
         searchOptions: {
           content: 'test search',
@@ -167,17 +148,7 @@ describe('MemorySearchTool', () => {
       });
       expect(result).toEqual({
         success: true,
-        memories: [
-          {
-            id: 'mem-1',
-            sentence: 'Tagged memory',
-            importance: 8,
-            tags: ['work', 'important'],
-            createdAt: expect.any(String),
-            updatedAt: expect.any(String),
-            score: 0.95
-          }
-        ],
+        memories: mockMemories,
         count: 1,
         searchOptions: {
           content: 'work related',
