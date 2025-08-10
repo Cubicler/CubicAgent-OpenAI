@@ -10,9 +10,6 @@ import { createLogger } from '../../utils/pino-logger.js';
  * 
  * Wraps an existing internal tool to provide summarization capabilities.
  * This approach uses composition to add summarization without modifying original tools.
- * 
- * Usage:
- * new SummarizerInternalTool(new MemoryRecallTool(memory), 'gpt-4o-mini', apiKey)
  */
 export class SummarizerInternalTool implements InternalTool {
   readonly toolName: string;
@@ -38,9 +35,6 @@ export class SummarizerInternalTool implements InternalTool {
     });
   }
 
-  /**
-   * Get the tool definition for this specific summarizer
-   */
   getToolDefinition(): ChatCompletionTool {
     const originalDef = this.originalTool.getToolDefinition();
     return {
@@ -63,18 +57,11 @@ export class SummarizerInternalTool implements InternalTool {
     };
   }
 
-  /**
-   * Check if this tool can handle the given function name
-   */
   canHandle(functionName: string): boolean {
     return functionName === this.toolName;
   }
 
-  /**
-   * Execute the summarizer internal tool
-   */
   async execute(parameters: JSONValue): Promise<InternalToolResult> {
-    // Validate parameters structure
     if (!parameters || typeof parameters !== 'object') {
       return {
         success: false,
@@ -82,7 +69,7 @@ export class SummarizerInternalTool implements InternalTool {
       };
     }
 
-    const params = parameters as Record<string, unknown>;
+    const params = parameters as Record<string, JSONValue>;
     const prompt = params['_prompt'] as string;
     
     if (!prompt) {
@@ -92,20 +79,16 @@ export class SummarizerInternalTool implements InternalTool {
       };
     }
 
-    // Extract original tool parameters (everything except _prompt)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _prompt: _promptParam, ...originalParams } = params;
 
     try {
       this.logger.info(`🔧 Executing ${this.originalTool.toolName} for summarization`);
       
-      // Execute the original internal tool
       const toolResult = await this.originalTool.execute(originalParams as JSONValue);
       
       this.logger.info(`🤖 Summarizing ${this.originalTool.toolName} results with ${this.summarizerModel}`);
       
-      // Summarize the results using the dedicated model
-      const summaryResult = await this.summarizeResult(toolResult, prompt);
+      const summaryResult = await this.summarizeResult(toolResult as JSONValue, prompt);
       
       return {
         success: true,
@@ -126,10 +109,7 @@ export class SummarizerInternalTool implements InternalTool {
     }
   }
 
-  /**
-   * Use the summarizer model to summarize tool results
-   */
-  private async summarizeResult(toolResult: unknown, prompt: string): Promise<{ summary: string; tokensUsed: number }> {
+  private async summarizeResult(toolResult: JSONValue, prompt: string): Promise<{ summary: string; tokensUsed: number }> {
     try {
       const response = await this.openai.chat.completions.create({
         model: this.summarizerModel,
@@ -143,7 +123,7 @@ export class SummarizerInternalTool implements InternalTool {
             content: `${prompt}\n\nInternal Tool Result:\n${JSON.stringify(toolResult, null, 2)}`
           }
         ],
-        temperature: 0.3 // Lower temperature for more consistent summaries
+        temperature: 0.3
       });
 
       const summary = response.choices[0]?.message?.content || 'No summary generated';

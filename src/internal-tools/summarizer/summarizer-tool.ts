@@ -11,11 +11,6 @@ import { createLogger } from '../../utils/pino-logger.js';
  * 
  * Each instance handles one specific tool summarization (e.g., summarize_getLogs)
  * This approach allows for clean registration with InternalToolAggregator.addTool()
- * 
- * Usage:
- * 1. Create instances for each available tool
- * 2. Add each instance to the aggregator via addTool()
- * 3. When tools are updated, create new instances and add them
  */
 export class SummarizerToolInstance implements InternalTool {
   readonly toolName: string;
@@ -44,9 +39,6 @@ export class SummarizerToolInstance implements InternalTool {
     });
   }
 
-  /**
-   * Get the tool definition for this specific summarizer
-   */
   getToolDefinition(): ChatCompletionTool {
     return {
       type: 'function' as const,
@@ -68,18 +60,11 @@ export class SummarizerToolInstance implements InternalTool {
     };
   }
 
-  /**
-   * Check if this tool can handle the given function name
-   */
   canHandle(functionName: string): boolean {
     return functionName === this.toolName;
   }
 
-  /**
-   * Execute the summarizer tool
-   */
   async execute(parameters: JSONValue): Promise<InternalToolResult> {
-    // Validate parameters structure
     if (!parameters || typeof parameters !== 'object') {
       return {
         success: false,
@@ -87,7 +72,7 @@ export class SummarizerToolInstance implements InternalTool {
       };
     }
 
-    const params = parameters as Record<string, unknown>;
+    const params = parameters as Record<string, JSONValue>;
     const prompt = params['_prompt'] as string;
     
     if (!prompt) {
@@ -97,22 +82,16 @@ export class SummarizerToolInstance implements InternalTool {
       };
     }
 
-    // Extract original tool parameters (everything except _prompt)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { _prompt: _promptParam, ...originalParams } = params;
 
     try {
       this.logger.info(`🔧 Executing ${this.originalTool.name} for summarization`);
       
-      // Type assertion for AgentClient.callTool compatibility
       const typedParams = originalParams as Record<string, JSONValue>;
-      
-      // Execute the original tool
       const toolResult = await this.agentClient.callTool(this.originalTool.name, typedParams);
       
       this.logger.info(`🤖 Summarizing ${this.originalTool.name} results with ${this.summarizerModel}`);
       
-      // Summarize the results using the dedicated model
       const summaryResult = await this.summarizeResult(toolResult, prompt);
       
       return {
@@ -134,10 +113,7 @@ export class SummarizerToolInstance implements InternalTool {
     }
   }
 
-  /**
-   * Use the summarizer model to summarize tool results
-   */
-  private async summarizeResult(toolResult: unknown, prompt: string): Promise<{ summary: string; tokensUsed: number }> {
+  private async summarizeResult(toolResult: JSONValue, prompt: string): Promise<{ summary: string; tokensUsed: number }> {
     try {
       const response = await this.openai.chat.completions.create({
         model: this.summarizerModel,
@@ -151,7 +127,7 @@ export class SummarizerToolInstance implements InternalTool {
             content: `${prompt}\n\nTool Result:\n${JSON.stringify(toolResult, null, 2)}`
           }
         ],
-        temperature: 0.3 // Lower temperature for more consistent summaries
+        temperature: 0.3
       });
 
       const summary = response.choices[0]?.message?.content || 'No summary generated';
@@ -166,9 +142,6 @@ export class SummarizerToolInstance implements InternalTool {
   }
 }
 
-/**
- * Factory function to create summarizer tool instances for available tools
- */
 export function createSummarizerTools(
   availableTools: AgentTool[],
   summarizerModel: string,
